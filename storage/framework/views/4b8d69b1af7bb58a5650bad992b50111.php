@@ -1,7 +1,6 @@
-@extends('layouts.app')
-@section('title','Users')
+<?php $__env->startSection('title','Users'); ?>
 
-@push('styles')
+<?php $__env->startPush('styles'); ?>
 <style>
 .pro-card { background:#fff;border:none;border-radius:14px;box-shadow:0 1px 3px rgba(0,0,0,.06),0 4px 16px rgba(0,0,0,.08); }
 [data-bs-theme="dark"] .pro-card { background:#1c1c1e; }
@@ -18,9 +17,9 @@
 .perm-override-off { background:rgba(220,53,69,.1);color:#dc3545; }
 /* Fix: right column scrollable independently */
 </style>
-@endpush
+<?php $__env->stopPush(); ?>
 
-@section('content')
+<?php $__env->startSection('content'); ?>
 <div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-2">
     <div>
         <h2 class="syne mb-0" style="font-size:22px;font-weight:800;">👥 Users</h2>
@@ -33,51 +32,53 @@
 
 <div class="row g-4" style="align-items:start;">
 
-    {{-- ── Left: Users list ── --}}
+    
     <div class="col-lg-5">
         <div class="pro-card overflow-hidden">
             <div class="px-4 py-3 border-bottom d-flex align-items-center gap-2" style="background:var(--bs-tertiary-bg);">
                 <span class="fw-bold" style="font-size:13px;">All Users</span>
-                <span class="badge bg-secondary ms-auto">{{ $users->count() }}</span>
+                <span class="badge bg-secondary ms-auto"><?php echo e($users->count()); ?></span>
             </div>
-            @foreach($users as $user)
-            @php $cfg = $user->roleConfig(); @endphp
+            <?php $__currentLoopData = $users; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $user): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+            <?php $cfg = $user->roleConfig(); ?>
             <div class="user-row border-bottom px-4 py-3 d-flex align-items-center gap-3"
-                onclick="selectUser({{ $user->id }}, '{{ addslashes($user->name) }}', '{{ $user->email }}', '{{ $user->role }}')"
-                id="user-row-{{ $user->id }}">
+                onclick="selectUser(<?php echo e($user->id); ?>, '<?php echo e(addslashes($user->name)); ?>', '<?php echo e($user->email); ?>', '<?php echo e($user->role); ?>')"
+                id="user-row-<?php echo e($user->id); ?>">
                 <div style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#0d6efd,#0099ff);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;color:#fff;flex-shrink:0;">
-                    {{ strtoupper(substr($user->name,0,1)) }}
+                    <?php echo e(strtoupper(substr($user->name,0,1))); ?>
+
                 </div>
                 <div class="flex-grow-1 min-width-0">
-                    <div class="fw-semibold" style="font-size:13px;">{{ $user->name }}
-                        @if($user->id === auth()->id())
+                    <div class="fw-semibold" style="font-size:13px;"><?php echo e($user->name); ?>
+
+                        <?php if($user->id === auth()->id()): ?>
                         <span class="badge bg-secondary ms-1" style="font-size:9px;">You</span>
-                        @endif
+                        <?php endif; ?>
                     </div>
-                    <div class="text-secondary" style="font-size:11px;">{{ $user->email }}</div>
+                    <div class="text-secondary" style="font-size:11px;"><?php echo e($user->email); ?></div>
                 </div>
                 <div class="d-flex align-items-center gap-1 flex-shrink-0">
-                    <span class="badge bg-{{ $cfg['color'] }} rounded-pill" style="font-size:10px;">{{ $cfg['icon'] }} {{ $cfg['label'] }}</span>
-                    @php $overrideCount = $user->permissions()->count(); @endphp
-                    @if($overrideCount > 0)
-                    <span class="badge bg-warning text-dark rounded-pill" style="font-size:10px;" title="{{ $overrideCount }} custom permission(s)">{{ $overrideCount }} custom</span>
-                    @endif
+                    <span class="badge bg-<?php echo e($cfg['color']); ?> rounded-pill" style="font-size:10px;"><?php echo e($cfg['icon']); ?> <?php echo e($cfg['label']); ?></span>
+                    <?php $overrideCount = $user->permissions()->count(); ?>
+                    <?php if($overrideCount > 0): ?>
+                    <span class="badge bg-warning text-dark rounded-pill" style="font-size:10px;" title="<?php echo e($overrideCount); ?> custom permission(s)"><?php echo e($overrideCount); ?> custom</span>
+                    <?php endif; ?>
                 </div>
             </div>
-            @endforeach
+            <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
         </div>
     </div>
 
-    {{-- ── Right: Permission editor ── --}}
+    
     <div class="col-lg-7">
-        {{-- Empty state --}}
+        
         <div id="perm-empty" class="pro-card p-5 text-center text-secondary">
             <div style="font-size:40px;opacity:.2;margin-bottom:12px;">🔐</div>
             <div class="fw-semibold mb-1">Select a user to edit permissions</div>
             <div class="small">Click any user on the left to manage their individual permissions</div>
         </div>
 
-        {{-- Permission editor --}}
+        
         <div id="perm-editor" style="display:none;">
             <div class="pro-card mb-3 p-4">
                 <div class="d-flex align-items-center gap-3 mb-3">
@@ -96,22 +97,22 @@
                     </div>
                 </div>
 
-                {{-- Role selector --}}
+                
                 <div class="d-flex align-items-center gap-2 p-3 rounded-3" style="background:var(--bs-tertiary-bg);border:1px solid var(--bs-border-color);">
                     <span class="text-secondary small fw-semibold">Role:</span>
                     <form method="POST" id="role-form" action="" class="d-flex align-items-center gap-2 flex-grow-1">
-                        @csrf @method('PATCH')
+                        <?php echo csrf_field(); ?> <?php echo method_field('PATCH'); ?>
                         <select name="role" class="form-select form-select-sm no-ts flex-grow-1" onchange="this.closest('form').submit()" id="pe-role-select">
-                            @foreach(\App\Helpers\UserRole::ROLES as $roleKey => $roleCfg)
-                            <option value="{{ $roleKey }}">{{ $roleCfg['icon'] }} {{ $roleCfg['label'] }} — {{ $roleCfg['description'] }}</option>
-                            @endforeach
+                            <?php $__currentLoopData = \App\Helpers\UserRole::ROLES; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $roleKey => $roleCfg): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                            <option value="<?php echo e($roleKey); ?>"><?php echo e($roleCfg['icon']); ?> <?php echo e($roleCfg['label']); ?> — <?php echo e($roleCfg['description']); ?></option>
+                            <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                         </select>
                     </form>
                     <span class="text-secondary small">→ sets defaults below</span>
                 </div>
             </div>
 
-            {{-- Permissions form --}}
+            
             <div class="pro-card p-4">
                 <div class="d-flex align-items-center justify-content-between mb-3">
                     <div>
@@ -126,37 +127,37 @@
                 </div>
 
                 <form method="POST" id="permissions-form" action="">
-                    @csrf
-                    @php
+                    <?php echo csrf_field(); ?>
+                    <?php
                         $permGroups = [];
                         foreach(\App\Helpers\UserRole::PERMISSIONS as $perm => $roles) {
                             $group = explode('.', $perm)[0];
                             $permGroups[$group][] = $perm;
                         }
-                    @endphp
+                    ?>
 
-                    @foreach($permGroups as $group => $perms)
+                    <?php $__currentLoopData = $permGroups; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $group => $perms): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                     <div class="perm-group">
-                        <div class="perm-group-title">{{ ucfirst(str_replace('-', ' ', $group)) }}</div>
-                        @foreach($perms as $perm)
+                        <div class="perm-group-title"><?php echo e(ucfirst(str_replace('-', ' ', $group))); ?></div>
+                        <?php $__currentLoopData = $perms; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $perm): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                         <div class="perm-item">
                             <div>
-                                <div class="perm-label">{{ $perm }}</div>
+                                <div class="perm-label"><?php echo e($perm); ?></div>
                             </div>
                             <div class="d-flex align-items-center gap-2">
-                                <span class="perm-source" id="src-{{ str_replace(['.'], '-', $perm) }}"></span>
+                                <span class="perm-source" id="src-<?php echo e(str_replace(['.'], '-', $perm)); ?>"></span>
                                 <div class="form-check form-switch mb-0">
                                     <input class="form-check-input perm-toggle" type="checkbox"
                                         name="permissions[]"
-                                        value="{{ $perm }}"
-                                        id="perm-{{ str_replace(['.'], '-', $perm) }}"
-                                        onchange="updatePermSource('{{ $perm }}', this.checked)">
+                                        value="<?php echo e($perm); ?>"
+                                        id="perm-<?php echo e(str_replace(['.'], '-', $perm)); ?>"
+                                        onchange="updatePermSource('<?php echo e($perm); ?>', this.checked)">
                                 </div>
                             </div>
                         </div>
-                        @endforeach
+                        <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                     </div>
-                    @endforeach
+                    <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
 
                     <div class="mt-3 pt-3 border-top d-flex gap-2">
                         <button type="submit" class="btn btn-primary px-4">
@@ -172,7 +173,7 @@
     </div>
 </div>
 
-{{-- Add User Modal --}}
+
 <div class="modal fade" id="addUserModal" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content border-0 shadow">
@@ -180,8 +181,8 @@
                 <h5 class="modal-title fw-bold"><i class="bi bi-person-plus me-2 text-success"></i>Add New User</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
-            <form method="POST" action="{{ route('users.store') }}">
-                @csrf
+            <form method="POST" action="<?php echo e(route('users.store')); ?>">
+                <?php echo csrf_field(); ?>
                 <div class="modal-body pt-0">
                     <div class="row g-3">
                         <div class="col-12">
@@ -199,9 +200,9 @@
                         <div class="col-sm-6">
                             <label class="form-label">Role *</label>
                             <select name="role" class="form-select no-ts" required>
-                                @foreach(\App\Helpers\UserRole::ROLES as $roleKey => $roleCfg)
-                                <option value="{{ $roleKey }}">{{ $roleCfg['icon'] }} {{ $roleCfg['label'] }}</option>
-                                @endforeach
+                                <?php $__currentLoopData = \App\Helpers\UserRole::ROLES; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $roleKey => $roleCfg): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                <option value="<?php echo e($roleKey); ?>"><?php echo e($roleCfg['icon']); ?> <?php echo e($roleCfg['label']); ?></option>
+                                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                             </select>
                         </div>
                     </div>
@@ -215,7 +216,7 @@
     </div>
 </div>
 
-{{-- Edit User Modal --}}
+
 <div class="modal fade" id="editUserModal" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content border-0 shadow">
@@ -224,7 +225,7 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <form method="POST" id="edit-user-form" action="">
-                @csrf @method('PUT')
+                <?php echo csrf_field(); ?> <?php echo method_field('PUT'); ?>
                 <div class="modal-body pt-0">
                     <div class="row g-3">
                         <div class="col-12">
@@ -250,19 +251,19 @@
     </div>
 </div>
 
-{{-- Delete form (hidden) --}}
+
 <form method="POST" id="delete-user-form" action="" style="display:none;">
-    @csrf @method('DELETE')
+    <?php echo csrf_field(); ?> <?php echo method_field('DELETE'); ?>
 </form>
 
-@endsection
+<?php $__env->stopSection(); ?>
 
-@push('scripts')
+<?php $__env->startPush('scripts'); ?>
 <script>
 // All permissions data from PHP
-var allPermissions  = @json(array_keys(\App\Helpers\UserRole::PERMISSIONS));
-var rolePermissions = @json(\App\Helpers\UserRole::PERMISSIONS);
-@php
+var allPermissions  = <?php echo json_encode(array_keys(\App\Helpers\UserRole::PERMISSIONS), 15, 512) ?>;
+var rolePermissions = <?php echo json_encode(\App\Helpers\UserRole::PERMISSIONS, 15, 512) ?>;
+<?php
 $usersData = $users->map(function($u) {
     $overrides = [];
     foreach($u->permissions()->get(['permission','granted']) as $p) {
@@ -276,8 +277,8 @@ $usersData = $users->map(function($u) {
         'overrides' => $overrides,
     ];
 })->values()->toArray();
-@endphp
-var allUsers = {!! json_encode($usersData) !!};
+?>
+var allUsers = <?php echo json_encode($usersData); ?>;
 
 var currentUserId   = null;
 var currentUserRole = null;
@@ -306,7 +307,7 @@ function selectUser(userId, name, email, role) {
     document.getElementById('role-form').action = '/users/' + userId + '/role';
 
     // Set delete button
-    var currentAuthId = {{ auth()->id() }};
+    var currentAuthId = <?php echo e(auth()->id()); ?>;
     document.getElementById('pe-delete-btn').style.display =
         (userId === currentAuthId) ? 'none' : '';
     document.getElementById('delete-user-form').action = '/users/' + userId;
@@ -423,4 +424,5 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 </script>
-@endpush
+<?php $__env->stopPush(); ?>
+<?php echo $__env->make('layouts.app', \Illuminate\Support\Arr::except(get_defined_vars(), ['__data', '__path']))->render(); ?><?php /**PATH D:\Claud AI\new18\mobileshop\resources\views/auth/users.blade.php ENDPATH**/ ?>

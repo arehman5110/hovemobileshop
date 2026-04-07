@@ -12,14 +12,42 @@ use App\Models\RepairItem;
 use App\Models\RepairType;
 use App\Models\Voucher;
 use Illuminate\Http\Request;
+use App\Helpers\JobStatus;
 
 class JobController extends Controller
 {
     public function index(Request $request)
     {
+        // ── Live search suggestions ──────────────────────────────
+        if ($request->has('search_suggest')) {
+            $q = $request->q ?? '';
+            $customers = \App\Models\Customer::where('name', 'like', '%'.$q.'%')
+                ->orWhere('phone', 'like', '%'.$q.'%')
+                ->withCount('jobs')
+                ->orderBy('name')
+                ->limit(8)
+                ->get(['id','name','phone','email']);
+            return response()->json($customers->map(fn($c) => [
+                'id'         => $c->id,
+                'name'       => $c->name,
+                'phone'      => $c->phone,
+                'jobs_count' => $c->jobs_count,
+            ]));
+        }
+
+        // ── Normal index ─────────────────────────────────────────
         $query = Job::with(['customer', 'devices.repairItems.repairType', 'payments']);
 
-        if ($request->filled('status'))    $query->where('status', $request->status);
+        // Multi-select status — default to In Progress + Waiting Parts
+        if ($request->has('status')) {
+            $statuses = array_filter((array)$request->status);
+            if (!empty($statuses)) {
+                $query->whereIn('status', $statuses);
+            }
+        } else {
+            $query->whereIn('status', JobStatus::activeStatuses());
+        }
+
         if ($request->filled('date_from')) $query->whereDate('date_in', '>=', $request->date_from);
         if ($request->filled('date_to'))   $query->whereDate('date_in', '<=', $request->date_to);
         if ($request->filled('search')) {
@@ -52,11 +80,12 @@ class JobController extends Controller
             'customer_id'    => 'required|exists:customers,id',
             'date_in'        => 'required|date',
             'date_out'       => 'nullable|date|after_or_equal:date_in',
-            'status'         => 'required|in:In Progress,Completed,Waiting Parts,Cancelled',
-            'notes'          => 'nullable|string',
-            'discount_type'  => 'nullable|in:percent,fixed',
-            'discount_value' => 'nullable|numeric|min:0',
-            'devices'        => 'required|array|min:1',
+            'status'          => JobStatus::validationRule(),
+            'device_location' => 'nullable|in:With Us,With Customer',
+            'notes'           => 'nullable|string',
+            'discount_type'   => 'nullable|in:percent,fixed',
+            'discount_value'  => 'nullable|numeric|min:0',
+            'devices'         => 'required|array|min:1',
             'devices.*.name' => 'required|string|max:100',
         ]);
 
@@ -76,10 +105,11 @@ class JobController extends Controller
         $job = Job::create([
             'customer_id'    => $request->customer_id,
             'date_in'        => $request->date_in,
-            'date_out'       => $request->date_out,
-            'status'         => $request->status,
-            'notes'          => $request->notes,
-            'discount_type'  => $request->discount_type,
+            'date_out'       => $request->date_out ?: ($request->status === 'Completed' ? now()->toDateString() : null),
+            'status'          => $request->status,
+            'device_location' => $request->device_location ?? 'With Us',
+            'notes'           => $request->notes,
+            'discount_type'   => $request->discount_type,
             'discount_value' => $request->discount_value ?? 0,
             'voucher_code'   => $voucherCode,
             'voucher_amount' => $voucherAmount,
@@ -96,6 +126,17 @@ class JobController extends Controller
                 'sort_order' => $dIdx,
             ]);
             $this->createRepairItems($device, $deviceData);
+
+            // ── Deduct stock for parts used ───────────────────────
+            $partIds = array_values(array_filter((array)($deviceData['part_ids'] ?? [])));
+            foreach ($partIds as $partId) {
+                if (is_numeric($partId)) {
+                    $part = \App\Models\Part::find((int)$partId);
+                    if ($part && $part->stock > 0) {
+                        $part->decrement('stock');
+                    }
+                }
+            }
         }
 
         // Inline payment — supports single or split
@@ -155,31 +196,46 @@ class JobController extends Controller
             'customer_id'    => 'required|exists:customers,id',
             'date_in'        => 'required|date',
             'date_out'       => 'nullable|date|after_or_equal:date_in',
-            'status'         => 'required|in:In Progress,Completed,Waiting Parts,Cancelled',
-            'notes'          => 'nullable|string',
-            'discount_type'  => 'nullable|in:percent,fixed',
-            'discount_value' => 'nullable|numeric|min:0',
-            'devices'        => 'required|array|min:1',
+            'status'          => JobStatus::validationRule(),
+            'device_location' => 'nullable|in:With Us,With Customer',
+            'notes'           => 'nullable|string',
+            'discount_type'   => 'nullable|in:percent,fixed',
+            'discount_value'  => 'nullable|numeric|min:0',
+            'devices'         => 'required|array|min:1',
             'devices.*.name' => 'required|string|max:100',
         ]);
 
         \DB::transaction(function() use ($request, $job) {
 
             $job->update([
-                'customer_id'    => $request->customer_id,
-                'date_in'        => $request->date_in,
-                'date_out'       => $request->date_out  ?: null,
-                'status'         => $request->status,
-                'notes'          => $request->notes,
-                'discount_type'  => $request->discount_type  ?: null,
-                'discount_value' => $request->discount_value ?? 0,
+                'customer_id'     => $request->customer_id,
+                'date_in'         => $request->date_in,
+                'date_out'        => $request->date_out ?: ($request->status === 'Completed' ? now()->toDateString() : null),
+                'status'          => $request->status,
+                'device_location' => $request->device_location ?? 'With Us',
+                'notes'           => $request->notes,
+                'discount_type'   => $request->discount_type  ?: null,
+                'discount_value'  => $request->discount_value ?? 0,
             ]);
 
-            // Delete devices (cascades to repair_items only — payments are untouched)
+            // ── Restore stock for OLD parts before deleting devices ───
+            $oldPartIds = $job->devices()
+                ->with('repairItems')
+                ->get()
+                ->flatMap(fn($d) => $d->repairItems->pluck('part_id'))
+                ->filter()
+                ->values();
+
+            foreach ($oldPartIds as $oldPartId) {
+                $part = \App\Models\Part::find($oldPartId);
+                if ($part) $part->increment('stock');
+            }
+
+            // Delete devices (cascades to repair_items only — payments untouched)
             $job->devices()->delete();
 
+            // ── Create new devices and deduct stock for NEW parts ─────
             foreach ($request->devices as $dIdx => $deviceData) {
-                // Skip blank device rows
                 if (empty(trim($deviceData['name'] ?? ''))) continue;
 
                 $device = Device::create([
@@ -192,6 +248,17 @@ class JobController extends Controller
                     'sort_order' => $dIdx,
                 ]);
                 $this->createRepairItems($device, $deviceData);
+
+                // Deduct stock for new parts
+                $partIds = array_values(array_filter((array)($deviceData['part_ids'] ?? [])));
+                foreach ($partIds as $partId) {
+                    if (is_numeric($partId)) {
+                        $part = \App\Models\Part::find((int)$partId);
+                        if ($part && $part->stock > 0) {
+                            $part->decrement('stock');
+                        }
+                    }
+                }
             }
 
         });
@@ -202,7 +269,7 @@ class JobController extends Controller
 
     public function updateDeviceStatus(Request $request, \App\Models\Device $device)
     {
-        $request->validate(['status' => 'required|in:In Progress,Completed,Waiting Parts,Cancelled']);
+        $request->validate(['status' => JobStatus::validationRule()]);
         // Update all repair items on this device
         $device->repairItems()->update(['status' => $request->status]);
         return back()->with('success', 'Device status updated.');
@@ -223,11 +290,17 @@ class JobController extends Controller
 
     public function updateStatus(Request $request, Job $job)
     {
-        $request->validate(['status' => 'required|in:In Progress,Completed,Waiting Parts,Cancelled']);
+        $request->validate(['status' => JobStatus::validationRule()]);
         $status = $request->status;
 
-        // Update job status
-        $job->update(['status' => $status]);
+        $updateData = ['status' => $status];
+
+        // Auto-set completion date when marked Completed and date_out is empty
+        if ($status === 'Completed' && empty($job->date_out)) {
+            $updateData['date_out'] = now()->toDateString();
+        }
+
+        $job->update($updateData);
 
         // Update all repair items status for each device
         foreach ($job->devices as $device) {
@@ -239,6 +312,17 @@ class JobController extends Controller
 
     public function destroy(Job $job)
     {
+        // Restore stock for all parts used in this job
+        $job->load('devices.repairItems');
+        foreach ($job->devices as $device) {
+            foreach ($device->repairItems as $item) {
+                if ($item->part_id) {
+                    $part = \App\Models\Part::find($item->part_id);
+                    if ($part) $part->increment('stock');
+                }
+            }
+        }
+
         $job->delete();
         return redirect()->route('jobs.index')->with('success', 'Job deleted.');
     }

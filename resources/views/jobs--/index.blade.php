@@ -42,11 +42,13 @@
     display:inline-flex;align-items:center;gap:4px;
     padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;
 }
-@php foreach(\App\Helpers\JobStatus::STATUSES as $s => $cfg):
-    $cls = 'filter-tag-status-'.strtolower(str_replace(' ','-',$s));
-@endphp
-.{{ $cls }} { background:{{ $cfg['bg'] }};color:{{ $cfg['color'] }}; }
-@php endforeach; @endphp
+.filter-tag-status-in-progress  { background:rgba(13,110,253,.12);color:#0d6efd; }
+.filter-tag-status-waiting-parts { background:rgba(255,193,7,.15);color:#cc9a00; }
+.filter-tag-status-completed     { background:rgba(25,135,84,.12);color:#198754; }
+.filter-tag-status-cancelled     { background:rgba(108,117,125,.12);color:#6c757d; }
+.filter-tag-status-ready-for-collection { background:rgba(13,202,240,.12);color:#087990; }
+[data-bs-theme="dark"] .filter-tag-status-ready-for-collection { color:#0dcaf0; }
+[data-bs-theme="dark"] .filter-tag-status-waiting-parts { color:#ffc107; }
 
 /* ── Table ──────────────────────────────────────────────────────── */
 .table-card { border-radius:14px;overflow:hidden; }
@@ -103,6 +105,16 @@
     border-bottom:1px solid var(--bs-border-color);
     font-size:12px;
 }
+
+/* ── Status badge helper ────────────────────────────────────────── */
+.s-badge { display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:20px;font-size:11px;font-weight:700; }
+.s-in-progress  { background:rgba(13,110,253,.12);color:#0d6efd; }
+.s-waiting       { background:rgba(255,193,7,.2);color:#a07000; }
+.s-completed     { background:rgba(25,135,84,.12);color:#198754; }
+.s-cancelled     { background:rgba(108,117,125,.1);color:#6c757d; }
+.s-ready         { background:rgba(13,202,240,.12);color:#087990; }
+[data-bs-theme="dark"] .s-ready { color:#0dcaf0; }
+[data-bs-theme="dark"] .s-waiting { color:#ffc107; }
 </style>
 @endpush
 
@@ -111,7 +123,7 @@
     $selectedStatuses = request()->has('status')
         ? (array)request('status')
         : ['In Progress','Waiting Parts'];
-    $allStatuses = \App\Models\Job::statuses();
+    $allStatuses = ['In Progress','Waiting Parts','Completed','Cancelled'];
     $isAll       = count(array_intersect($selectedStatuses,$allStatuses)) === count($allStatuses);
     $hasSearch   = request()->filled('search');
     $hasDateFrom = request()->filled('date_from');
@@ -243,8 +255,7 @@
                             </label>
                         </li>
                         <li><hr class="dropdown-divider my-1"></li>
-                        @foreach(\App\Models\Job::statuses() as $st)
-                        @php $cfg = \App\Helpers\JobStatus::config($st); $cls=''; $ic=$cfg['icon']; @endphp
+                        @foreach(['In Progress'=>['text-primary','🔧'],'Waiting Parts'=>['text-warning','⏳'],'Completed'=>['text-success','✅'],'Cancelled'=>['text-secondary','✕'],'Ready for Collection'=>['text-info','📦']] as $st=>[$cls,$ic])
                         <li>
                             <label class="dropdown-item rounded d-flex align-items-center gap-2 py-2" style="cursor:pointer;">
                                 <input type="checkbox" class="form-check-input m-0 status-chk" value="{{ $st }}"
@@ -294,8 +305,8 @@
     @else
         @foreach($selectedStatuses as $s)
         @php
-            $tagCls  = 'filter-tag-status-'.strtolower(str_replace(' ','-',$s));
-            $tagIcon = \App\Helpers\JobStatus::config($s)['icon'];
+            $tagCls  = ['In Progress'=>'filter-tag-status-in-progress','Waiting Parts'=>'filter-tag-status-waiting-parts','Completed'=>'filter-tag-status-completed','Cancelled'=>'filter-tag-status-cancelled','Ready for Collection'=>'filter-tag-status-ready-for-collection'][$s] ?? '';
+            $tagIcon = ['In Progress'=>'🔧','Waiting Parts'=>'⏳','Completed'=>'✅','Cancelled'=>'✕','Ready for Collection'=>'📦'][$s] ?? '';
         @endphp
         <span class="filter-tag {{ $tagCls }}">{{ $tagIcon }} {{ $s }}</span>
         @endforeach
@@ -354,7 +365,6 @@
                     <th style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;opacity:.55;border:none;padding:10px 8px;">Devices</th>
                     <th style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;opacity:.55;border:none;padding:10px 8px;">Date In</th>
                     <th style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;opacity:.55;border:none;padding:10px 8px;">Status</th>
-                    <th style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;opacity:.55;border:none;padding:10px 8px;">Location</th>
                     <th style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;opacity:.55;border:none;padding:10px 8px;">Total</th>
                     <th style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;opacity:.55;border:none;padding:10px 8px;">Balance</th>
                     <th style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;opacity:.55;border:none;padding:10px 16px 10px 8px;text-align:right;">Actions</th>
@@ -362,6 +372,16 @@
             </thead>
             <tbody>
             @forelse($jobs as $job)
+            @php
+                $statusMap = [
+                    'In Progress'   => ['s-in-progress','bi-tools','🔧'],
+                    'Waiting Parts' => ['s-waiting','bi-clock','⏳'],
+                    'Completed'     => ['s-completed','bi-check-circle','✅'],
+                    'Cancelled'     => ['s-cancelled','bi-x-circle','✕'],
+                    'Ready for Collection' => ['s-ready','bi-bag-check','📦'],
+                ];
+                $sc = $statusMap[$job->status] ?? ['s-cancelled','bi-circle','?'];
+            @endphp
 
             {{-- Main Row --}}
             <tr class="job-row border-top" id="row-{{ $job->id }}" onclick="toggleExpand({{ $job->id }},this)">
@@ -392,14 +412,9 @@
                     @endif
                 </td>
                 <td style="padding:12px 8px;">
-                    @include('jobs._status_badge', ['status' => $job->status])
-                </td>
-                <td style="padding:12px 8px;">
-                    @if(($job->device_location ?? 'With Us') === 'With Us')
-                    <span class="badge bg-primary rounded-pill" style="font-size:10px;">📦 Us</span>
-                    @else
-                    <span class="badge bg-warning text-dark rounded-pill" style="font-size:10px;">👤 Customer</span>
-                    @endif
+                    <span class="s-badge {{ $sc[0] }}">
+                        <i class="bi {{ $sc[1] }}"></i> {{ $job->status }}
+                    </span>
                 </td>
                 <td style="padding:12px 8px;" class="fw-semibold">
                     £{{ number_format($job->totalAfterDiscount(),2) }}
@@ -435,7 +450,7 @@
 
             {{-- Expanded Detail Row --}}
             <tr class="expand-row" id="expand-{{ $job->id }}">
-                <td colspan="10" class="expand-cell">
+                <td colspan="9" class="expand-cell">
                     <div class="expand-inner">
                         <div class="expand-grid">
 
@@ -479,16 +494,6 @@
                                 <span class="expand-sub">Duration: {{ $days }} day{{ $days!=1?'s':'' }}</span>
                                 @else
                                 <span class="text-warning expand-sub"><i class="bi bi-clock me-1"></i>In progress since {{ $job->date_in->diffForHumans() }}</span>
-                                @endif
-                            </div>
-
-                            {{-- Device Location --}}
-                            <div class="expand-section">
-                                <span class="expand-lbl">📍 Device Location</span>
-                                @if(($job->device_location ?? 'With Us') === 'With Us')
-                                <span class="expand-val"><span class="badge bg-primary" style="font-size:11px;">📦 With Us</span></span>
-                                @else
-                                <span class="expand-val"><span class="badge bg-warning text-dark" style="font-size:11px;">👤 With Customer</span></span>
                                 @endif
                             </div>
 
@@ -557,6 +562,15 @@
                                 </button>
                             </form>
                             @endif
+                            @if($job->status !== 'Cancelled')
+                            <form method="POST" action="{{ route('jobs.update-status',$job) }}" class="d-inline" onclick="event.stopPropagation()">
+                                @csrf @method('PATCH')
+                                <input type="hidden" name="status" value="Cancelled">
+                                <button type="submit" class="btn btn-outline-danger btn-sm" onclick="return confirm('Cancel this job?')">
+                                    <i class="bi bi-x-circle me-1"></i>Cancel
+                                </button>
+                            </form>
+                            @endif
                         </div>
                     </div>
                 </td>
@@ -564,7 +578,7 @@
 
             @empty
             <tr>
-                <td colspan="10" class="text-center py-5">
+                <td colspan="9" class="text-center py-5">
                     <div style="font-size:40px;opacity:.2;margin-bottom:12px;">🔧</div>
                     <div class="fw-semibold mb-1">No jobs found</div>
                     <div class="text-secondary small mb-3">
@@ -596,7 +610,7 @@
 @push('scripts')
 <script>
 // ── Status dropdown ───────────────────────────────────────────────
-var allStatuses = {!! json_encode(\App\Models\Job::statuses()) !!};
+var allStatuses = ['In Progress','Waiting Parts','Completed','Cancelled'];
 
 function updateStatusDropdown() {
     var checked = Array.from(document.querySelectorAll('.status-chk:checked')).map(function(c){return c.value;});

@@ -1,10 +1,9 @@
-@extends('layouts.app')
-@section('title','Jobs')
-@section('topbar-actions')
-<a href="{{ route('jobs.create') }}" class="btn btn-primary btn-sm"><i class="bi bi-plus-lg me-1"></i>New Job</a>
-@endsection
+<?php $__env->startSection('title','Jobs'); ?>
+<?php $__env->startSection('topbar-actions'); ?>
+<a href="<?php echo e(route('jobs.create')); ?>" class="btn btn-primary btn-sm"><i class="bi bi-plus-lg me-1"></i>New Job</a>
+<?php $__env->stopSection(); ?>
 
-@push('styles')
+<?php $__env->startPush('styles'); ?>
 <style>
 /* ── Cards ─────────────────────────────────────────────────────── */
 .pro-card {
@@ -42,11 +41,11 @@
     display:inline-flex;align-items:center;gap:4px;
     padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;
 }
-@php foreach(\App\Helpers\JobStatus::STATUSES as $s => $cfg):
+<?php foreach(\App\Helpers\JobStatus::STATUSES as $s => $cfg):
     $cls = 'filter-tag-status-'.strtolower(str_replace(' ','-',$s));
-@endphp
-.{{ $cls }} { background:{{ $cfg['bg'] }};color:{{ $cfg['color'] }}; }
-@php endforeach; @endphp
+?>
+.<?php echo e($cls); ?> { background:<?php echo e($cfg['bg']); ?>;color:<?php echo e($cfg['color']); ?>; }
+<?php endforeach; ?>
 
 /* ── Table ──────────────────────────────────────────────────────── */
 .table-card { border-radius:14px;overflow:hidden; }
@@ -104,10 +103,10 @@
     font-size:12px;
 }
 </style>
-@endpush
+<?php $__env->stopPush(); ?>
 
-@section('content')
-@php
+<?php $__env->startSection('content'); ?>
+<?php
     $selectedStatuses = request()->has('status')
         ? (array)request('status')
         : ['In Progress','Waiting Parts'];
@@ -123,9 +122,9 @@
     $statsWaiting = \App\Models\Job::where('status','Waiting Parts')->count();
     $statsDone    = \App\Models\Job::where('status','Completed')->count();
     $statsCancelled = \App\Models\Job::where('status','Cancelled')->count();
-@endphp
+?>
 
-{{-- Page Header --}}
+
 <div class="d-flex align-items-start justify-content-between mb-4 flex-wrap gap-3">
     <div>
         <h2 class="syne mb-0" style="font-size:24px;font-weight:800;">🔧 Repair Jobs</h2>
@@ -134,20 +133,20 @@
         </div>
     </div>
     <div class="d-flex gap-2">
-        <a href="{{ route('jobs.create') }}" class="btn btn-primary d-flex align-items-center gap-2">
+        <a href="<?php echo e(route('jobs.create')); ?>" class="btn btn-primary d-flex align-items-center gap-2">
             <i class="bi bi-plus-lg"></i>New Job
         </a>
     </div>
 </div>
 
-{{-- Stat Cards --}}
+
 <div class="row g-3 mb-4">
     <div class="col-6 col-md-3">
         <div class="pro-card stat-card">
             <div class="d-flex align-items-start justify-content-between">
                 <div>
                     <div class="text-secondary" style="font-size:12px;">Total Jobs</div>
-                    <div class="stat-val">{{ $statsTotal }}</div>
+                    <div class="stat-val"><?php echo e($statsTotal); ?></div>
                     <div class="text-secondary" style="font-size:11px;">All time</div>
                 </div>
                 <div class="stat-icon" style="background:rgba(13,110,253,.1);color:#0d6efd;">🗂️</div>
@@ -159,7 +158,7 @@
             <div class="d-flex align-items-start justify-content-between">
                 <div>
                     <div class="text-secondary" style="font-size:12px;">In Progress</div>
-                    <div class="stat-val text-primary">{{ $statsInProg }}</div>
+                    <div class="stat-val text-primary"><?php echo e($statsInProg); ?></div>
                     <div class="text-secondary" style="font-size:11px;">Active now</div>
                 </div>
                 <div class="stat-icon" style="background:rgba(13,110,253,.1);color:#0d6efd;">🔧</div>
@@ -171,7 +170,7 @@
             <div class="d-flex align-items-start justify-content-between">
                 <div>
                     <div class="text-secondary" style="font-size:12px;">Waiting Parts</div>
-                    <div class="stat-val text-warning">{{ $statsWaiting }}</div>
+                    <div class="stat-val text-warning"><?php echo e($statsWaiting); ?></div>
                     <div class="text-secondary" style="font-size:11px;">On hold</div>
                 </div>
                 <div class="stat-icon" style="background:rgba(255,193,7,.12);color:#cc9a00;">⏳</div>
@@ -183,7 +182,7 @@
             <div class="d-flex align-items-start justify-content-between">
                 <div>
                     <div class="text-secondary" style="font-size:12px;">Completed</div>
-                    <div class="stat-val text-success">{{ $statsDone }}</div>
+                    <div class="stat-val text-success"><?php echo e($statsDone); ?></div>
                     <div class="text-secondary" style="font-size:11px;">All time</div>
                 </div>
                 <div class="stat-icon" style="background:rgba(25,135,84,.1);color:#198754;">✅</div>
@@ -192,23 +191,23 @@
     </div>
 </div>
 
-{{-- Filter Bar --}}
+
 <div class="pro-card filter-card mb-3">
     <form method="GET" id="filter-form">
         <div class="row g-2 align-items-end">
 
-            {{-- Search with live suggestions --}}
+            
             <div class="col-12 col-sm-4 col-md-3">
                 <label class="form-label">Search</label>
                 <div class="position-relative">
                     <div class="input-group input-group-sm">
                         <span class="input-group-text"><i class="bi bi-search"></i></span>
                         <input type="text" name="search" id="search-input" class="form-control"
-                            value="{{ request('search') }}"
+                            value="<?php echo e(request('search')); ?>"
                             placeholder="Customer name or phone..."
                             autocomplete="off">
                     </div>
-                    {{-- Suggestions dropdown --}}
+                    
                     <div id="search-suggestions"
                         style="display:none;position:absolute;top:100%;left:0;right:0;z-index:1050;
                                background:var(--bs-body-bg);border:1px solid var(--bs-border-color);
@@ -218,7 +217,7 @@
                 </div>
             </div>
 
-            {{-- Status dropdown --}}
+            
             <div class="col-6 col-sm-3 col-md-2">
                 <label class="form-label">Status</label>
                 <div class="dropdown">
@@ -227,10 +226,11 @@
                         style="font-size:12px;"
                         data-bs-toggle="dropdown" data-bs-auto-close="outside">
                         <span id="status-dd-label">
-                            @if($isAll) All Statuses
-                            @elseif(count($selectedStatuses)===1) {{ $selectedStatuses[0] }}
-                            @else {{ count($selectedStatuses) }} selected
-                            @endif
+                            <?php if($isAll): ?> All Statuses
+                            <?php elseif(count($selectedStatuses)===1): ?> <?php echo e($selectedStatuses[0]); ?>
+
+                            <?php else: ?> <?php echo e(count($selectedStatuses)); ?> selected
+                            <?php endif; ?>
                         </span>
                         <i class="bi bi-chevron-down" style="font-size:10px;"></i>
                     </button>
@@ -238,45 +238,45 @@
                         <li>
                             <label class="dropdown-item rounded d-flex align-items-center gap-2 py-2" style="cursor:pointer;">
                                 <input type="checkbox" class="form-check-input m-0" id="chk-all"
-                                    {{ $isAll ? 'checked' : '' }} onchange="toggleAll()">
+                                    <?php echo e($isAll ? 'checked' : ''); ?> onchange="toggleAll()">
                                 <span class="fw-semibold" style="font-size:12px;">All Statuses</span>
                             </label>
                         </li>
                         <li><hr class="dropdown-divider my-1"></li>
-                        @foreach(\App\Models\Job::statuses() as $st)
-                        @php $cfg = \App\Helpers\JobStatus::config($st); $cls=''; $ic=$cfg['icon']; @endphp
+                        <?php $__currentLoopData = \App\Models\Job::statuses(); $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $st): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                        <?php $cfg = \App\Helpers\JobStatus::config($st); $cls=''; $ic=$cfg['icon']; ?>
                         <li>
                             <label class="dropdown-item rounded d-flex align-items-center gap-2 py-2" style="cursor:pointer;">
-                                <input type="checkbox" class="form-check-input m-0 status-chk" value="{{ $st }}"
-                                    {{ in_array($st,$selectedStatuses)?'checked':'' }} onchange="updateStatusDropdown()">
-                                <span class="{{ $cls }}" style="font-size:12px;">{{ $ic }} {{ $st }}</span>
+                                <input type="checkbox" class="form-check-input m-0 status-chk" value="<?php echo e($st); ?>"
+                                    <?php echo e(in_array($st,$selectedStatuses)?'checked':''); ?> onchange="updateStatusDropdown()">
+                                <span class="<?php echo e($cls); ?>" style="font-size:12px;"><?php echo e($ic); ?> <?php echo e($st); ?></span>
                             </label>
                         </li>
-                        @endforeach
+                        <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                         <li><hr class="dropdown-divider my-1"></li>
                         <li class="px-2"><button type="submit" class="btn btn-primary btn-sm w-100"><i class="bi bi-funnel me-1"></i>Apply</button></li>
                     </ul>
                 </div>
                 <div id="status-inputs">
-                    @foreach($selectedStatuses as $s)<input type="hidden" name="status[]" value="{{ $s }}">@endforeach
+                    <?php $__currentLoopData = $selectedStatuses; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $s): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?><input type="hidden" name="status[]" value="<?php echo e($s); ?>"><?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                 </div>
             </div>
 
-            {{-- Date From --}}
+            
             <div class="col-6 col-sm-3 col-md-2">
                 <label class="form-label">Date From</label>
-                <input type="date" name="date_from" class="form-control form-control-sm auto-submit" value="{{ request('date_from') }}">
+                <input type="date" name="date_from" class="form-control form-control-sm auto-submit" value="<?php echo e(request('date_from')); ?>">
             </div>
 
-            {{-- Date To --}}
+            
             <div class="col-6 col-sm-3 col-md-2">
                 <label class="form-label">Date To</label>
-                <input type="date" name="date_to" class="form-control form-control-sm auto-submit" value="{{ request('date_to') }}">
+                <input type="date" name="date_to" class="form-control form-control-sm auto-submit" value="<?php echo e(request('date_to')); ?>">
             </div>
 
-            {{-- Clear only --}}
+            
             <div class="col-auto">
-                <a href="{{ route('jobs.index') }}" class="btn btn-outline-secondary btn-sm">
+                <a href="<?php echo e(route('jobs.index')); ?>" class="btn btn-outline-secondary btn-sm">
                     <i class="bi bi-x-lg me-1"></i>Clear
                 </a>
             </div>
@@ -284,60 +284,62 @@
     </form>
 </div>
 
-{{-- Active Filters Bar — always visible so user knows what's selected --}}
+
 <div class="active-filters mb-3">
     <span style="font-weight:700;opacity:.6;font-size:11px;text-transform:uppercase;letter-spacing:.05em;white-space:nowrap;">Showing:</span>
 
-    {{-- Status tags --}}
-    @if($isAll)
+    
+    <?php if($isAll): ?>
         <span class="filter-tag" style="background:rgba(108,117,125,.1);color:var(--bs-secondary-color);">🗂️ All Statuses</span>
-    @else
-        @foreach($selectedStatuses as $s)
-        @php
+    <?php else: ?>
+        <?php $__currentLoopData = $selectedStatuses; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $s): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+        <?php
             $tagCls  = 'filter-tag-status-'.strtolower(str_replace(' ','-',$s));
             $tagIcon = \App\Helpers\JobStatus::config($s)['icon'];
-        @endphp
-        <span class="filter-tag {{ $tagCls }}">{{ $tagIcon }} {{ $s }}</span>
-        @endforeach
-    @endif
+        ?>
+        <span class="filter-tag <?php echo e($tagCls); ?>"><?php echo e($tagIcon); ?> <?php echo e($s); ?></span>
+        <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+    <?php endif; ?>
 
-    @if($hasSearch)
+    <?php if($hasSearch): ?>
     <span class="filter-tag" style="background:rgba(13,110,253,.08);color:#0d6efd;">
-        <i class="bi bi-search" style="font-size:10px;"></i> "{{ request('search') }}"
+        <i class="bi bi-search" style="font-size:10px;"></i> "<?php echo e(request('search')); ?>"
     </span>
-    @endif
+    <?php endif; ?>
 
-    @if($hasDateFrom)
+    <?php if($hasDateFrom): ?>
     <span class="filter-tag" style="background:rgba(102,16,242,.08);color:#6610f2;">
-        <i class="bi bi-calendar" style="font-size:10px;"></i> From {{ \Carbon\Carbon::parse(request('date_from'))->format('d M Y') }}
-    </span>
-    @endif
+        <i class="bi bi-calendar" style="font-size:10px;"></i> From <?php echo e(\Carbon\Carbon::parse(request('date_from'))->format('d M Y')); ?>
 
-    @if($hasDateTo)
+    </span>
+    <?php endif; ?>
+
+    <?php if($hasDateTo): ?>
     <span class="filter-tag" style="background:rgba(102,16,242,.08);color:#6610f2;">
-        <i class="bi bi-calendar" style="font-size:10px;"></i> To {{ \Carbon\Carbon::parse(request('date_to'))->format('d M Y') }}
-    </span>
-    @endif
+        <i class="bi bi-calendar" style="font-size:10px;"></i> To <?php echo e(\Carbon\Carbon::parse(request('date_to'))->format('d M Y')); ?>
 
-    @if($hasFilters)
-    <a href="{{ route('jobs.index') }}" class="ms-auto text-secondary text-decoration-none d-flex align-items-center gap-1" style="font-size:11px;white-space:nowrap;">
+    </span>
+    <?php endif; ?>
+
+    <?php if($hasFilters): ?>
+    <a href="<?php echo e(route('jobs.index')); ?>" class="ms-auto text-secondary text-decoration-none d-flex align-items-center gap-1" style="font-size:11px;white-space:nowrap;">
         <i class="bi bi-x-circle"></i> Clear filters
     </a>
-    @endif
+    <?php endif; ?>
 </div>
 
-{{-- Table --}}
+
 <div class="pro-card table-card">
 
-    {{-- Results bar --}}
+    
     <div class="results-bar">
         <div class="d-flex align-items-center gap-2">
             <span class="fw-semibold" style="font-size:13px;">
-                {{ $jobs->total() }} job{{ $jobs->total()!==1?'s':'' }} found
+                <?php echo e($jobs->total()); ?> job<?php echo e($jobs->total()!==1?'s':''); ?> found
             </span>
-            @if($jobs->total() > 0)
-            <span class="text-secondary">· page {{ $jobs->currentPage() }} of {{ $jobs->lastPage() }}</span>
-            @endif
+            <?php if($jobs->total() > 0): ?>
+            <span class="text-secondary">· page <?php echo e($jobs->currentPage()); ?> of <?php echo e($jobs->lastPage()); ?></span>
+            <?php endif; ?>
         </div>
         <div class="text-secondary d-flex align-items-center gap-1" style="font-size:11px;">
             <i class="bi bi-info-circle"></i> Click a row to expand details
@@ -361,242 +363,245 @@
                 </tr>
             </thead>
             <tbody>
-            @forelse($jobs as $job)
+            <?php $__empty_1 = true; $__currentLoopData = $jobs; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $job): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
 
-            {{-- Main Row --}}
-            <tr class="job-row border-top" id="row-{{ $job->id }}" onclick="toggleExpand({{ $job->id }},this)">
+            
+            <tr class="job-row border-top" id="row-<?php echo e($job->id); ?>" onclick="toggleExpand(<?php echo e($job->id); ?>,this)">
                 <td style="padding:12px 12px;text-align:center;width:36px;">
                     <i class="bi bi-chevron-down row-chevron"></i>
                 </td>
                 <td style="padding:12px 8px;">
-                    <span class="text-secondary fw-semibold">#{{ $job->id }}</span>
+                    <span class="text-secondary fw-semibold">#<?php echo e($job->id); ?></span>
                 </td>
                 <td style="padding:12px 8px;">
-                    <div class="fw-semibold" style="line-height:1.3;">{{ $job->customer->name }}</div>
-                    @if($job->customer->phone)
-                    <div class="text-secondary" style="font-size:11px;">{{ $job->customer->phone }}</div>
-                    @endif
+                    <div class="fw-semibold" style="line-height:1.3;"><?php echo e($job->customer->name); ?></div>
+                    <?php if($job->customer->phone): ?>
+                    <div class="text-secondary" style="font-size:11px;"><?php echo e($job->customer->phone); ?></div>
+                    <?php endif; ?>
                 </td>
                 <td style="padding:12px 8px;">
-                    @foreach($job->devices->take(2) as $d)
-                    <div style="line-height:1.4;">📱 {{ $d->name }}</div>
-                    @endforeach
-                    @if($job->devices->count() > 2)
-                    <div class="text-secondary" style="font-size:11px;">+{{ $job->devices->count()-2 }} more</div>
-                    @endif
+                    <?php $__currentLoopData = $job->devices->take(2); $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $d): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                    <div style="line-height:1.4;">📱 <?php echo e($d->name); ?></div>
+                    <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+                    <?php if($job->devices->count() > 2): ?>
+                    <div class="text-secondary" style="font-size:11px;">+<?php echo e($job->devices->count()-2); ?> more</div>
+                    <?php endif; ?>
                 </td>
                 <td style="padding:12px 8px;" class="text-secondary">
-                    {{ $job->date_in->format('d M Y') }}
-                    @if($job->date_out)
-                    <div style="font-size:11px;">Out: {{ $job->date_out->format('d M') }}</div>
-                    @endif
+                    <?php echo e($job->date_in->format('d M Y')); ?>
+
+                    <?php if($job->date_out): ?>
+                    <div style="font-size:11px;">Out: <?php echo e($job->date_out->format('d M')); ?></div>
+                    <?php endif; ?>
                 </td>
                 <td style="padding:12px 8px;">
-                    @include('jobs._status_badge', ['status' => $job->status])
+                    <?php echo $__env->make('jobs._status_badge', ['status' => $job->status], \Illuminate\Support\Arr::except(get_defined_vars(), ['__data', '__path']))->render(); ?>
                 </td>
                 <td style="padding:12px 8px;">
-                    @if(($job->device_location ?? 'With Us') === 'With Us')
+                    <?php if(($job->device_location ?? 'With Us') === 'With Us'): ?>
                     <span class="badge bg-primary rounded-pill" style="font-size:10px;">📦 Us</span>
-                    @else
+                    <?php else: ?>
                     <span class="badge bg-warning text-dark rounded-pill" style="font-size:10px;">👤 Customer</span>
-                    @endif
+                    <?php endif; ?>
                 </td>
                 <td style="padding:12px 8px;" class="fw-semibold">
-                    £{{ number_format($job->totalAfterDiscount(),2) }}
-                    @if($job->discount_type)
+                    £<?php echo e(number_format($job->totalAfterDiscount(),2)); ?>
+
+                    <?php if($job->discount_type): ?>
                     <div class="text-success" style="font-size:10px;">
-                        @if($job->discount_type==='percent') -{{ $job->discount_value }}%
-                        @else -£{{ number_format($job->discount_value,2) }}
-                        @endif
+                        <?php if($job->discount_type==='percent'): ?> -<?php echo e($job->discount_value); ?>%
+                        <?php else: ?> -£<?php echo e(number_format($job->discount_value,2)); ?>
+
+                        <?php endif; ?>
                     </div>
-                    @endif
+                    <?php endif; ?>
                 </td>
                 <td style="padding:12px 8px;">
-                    @if($job->isPaidInFull())
+                    <?php if($job->isPaidInFull()): ?>
                     <span class="s-badge s-completed"><i class="bi bi-check"></i> Paid</span>
-                    @elseif($job->totalPaid() > 0)
-                    <div class="text-danger fw-bold">£{{ number_format($job->balanceDue(),2) }}</div>
+                    <?php elseif($job->totalPaid() > 0): ?>
+                    <div class="text-danger fw-bold">£<?php echo e(number_format($job->balanceDue(),2)); ?></div>
                     <div class="text-secondary" style="font-size:10px;">Partial</div>
-                    @else
-                    <span class="text-danger fw-bold">£{{ number_format($job->balanceDue(),2) }}</span>
-                    @endif
+                    <?php else: ?>
+                    <span class="text-danger fw-bold">£<?php echo e(number_format($job->balanceDue(),2)); ?></span>
+                    <?php endif; ?>
                 </td>
                 <td style="padding:12px 16px 12px 8px;text-align:right;" onclick="event.stopPropagation()">
                     <div class="d-flex gap-1 justify-content-end">
-                        <a href="{{ route('jobs.show',$job) }}" class="btn btn-sm btn-outline-secondary" title="View"><i class="bi bi-eye"></i></a>
-                        <a href="{{ route('jobs.edit',$job) }}" class="btn btn-sm btn-outline-secondary" title="Edit"><i class="bi bi-pencil"></i></a>
-                        <form method="POST" action="{{ route('jobs.destroy',$job) }}" class="d-inline" onsubmit="return confirm('Delete job #{{ $job->id }}?')">
-                            @csrf @method('DELETE')
+                        <a href="<?php echo e(route('jobs.show',$job)); ?>" class="btn btn-sm btn-outline-secondary" title="View"><i class="bi bi-eye"></i></a>
+                        <a href="<?php echo e(route('jobs.edit',$job)); ?>" class="btn btn-sm btn-outline-secondary" title="Edit"><i class="bi bi-pencil"></i></a>
+                        <form method="POST" action="<?php echo e(route('jobs.destroy',$job)); ?>" class="d-inline" onsubmit="return confirm('Delete job #<?php echo e($job->id); ?>?')">
+                            <?php echo csrf_field(); ?> <?php echo method_field('DELETE'); ?>
                             <button class="btn btn-sm btn-outline-danger" title="Delete"><i class="bi bi-trash"></i></button>
                         </form>
                     </div>
                 </td>
             </tr>
 
-            {{-- Expanded Detail Row --}}
-            <tr class="expand-row" id="expand-{{ $job->id }}">
+            
+            <tr class="expand-row" id="expand-<?php echo e($job->id); ?>">
                 <td colspan="10" class="expand-cell">
                     <div class="expand-inner">
                         <div class="expand-grid">
 
-                            {{-- Customer --}}
+                            
                             <div class="expand-section">
                                 <span class="expand-lbl">👤 Customer</span>
-                                <span class="expand-val">{{ $job->customer->name }}</span>
-                                @if($job->customer->phone)
-                                <span class="expand-sub"><i class="bi bi-telephone me-1"></i>{{ $job->customer->phone }}</span>
-                                @endif
-                                @if($job->customer->email)
-                                <span class="expand-sub"><i class="bi bi-envelope me-1"></i>{{ $job->customer->email }}</span>
-                                @endif
+                                <span class="expand-val"><?php echo e($job->customer->name); ?></span>
+                                <?php if($job->customer->phone): ?>
+                                <span class="expand-sub"><i class="bi bi-telephone me-1"></i><?php echo e($job->customer->phone); ?></span>
+                                <?php endif; ?>
+                                <?php if($job->customer->email): ?>
+                                <span class="expand-sub"><i class="bi bi-envelope me-1"></i><?php echo e($job->customer->email); ?></span>
+                                <?php endif; ?>
                             </div>
 
-                            {{-- Devices --}}
+                            
                             <div class="expand-section">
                                 <span class="expand-lbl">📱 Devices & Repairs</span>
-                                @foreach($job->devices as $device)
+                                <?php $__currentLoopData = $job->devices; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $device): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                                 <div style="margin-bottom:4px;">
-                                    <span class="expand-val">{{ $device->name }}</span>
-                                    @if($device->imei)
-                                    <div class="expand-sub">IMEI: {{ $device->imei }}</div>
-                                    @endif
-                                    @foreach($device->repairItems as $ri)
-                                    @if($ri->repairType)
-                                    <div class="expand-sub">↳ {{ $ri->repairType->icon ?? '🔧' }} {{ $ri->repairType->name }}</div>
-                                    @endif
-                                    @endforeach
+                                    <span class="expand-val"><?php echo e($device->name); ?></span>
+                                    <?php if($device->imei): ?>
+                                    <div class="expand-sub">IMEI: <?php echo e($device->imei); ?></div>
+                                    <?php endif; ?>
+                                    <?php $__currentLoopData = $device->repairItems; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $ri): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                    <?php if($ri->repairType): ?>
+                                    <div class="expand-sub">↳ <?php echo e($ri->repairType->icon ?? '🔧'); ?> <?php echo e($ri->repairType->name); ?></div>
+                                    <?php endif; ?>
+                                    <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                                 </div>
-                                @endforeach
+                                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                             </div>
 
-                            {{-- Dates --}}
+                            
                             <div class="expand-section">
                                 <span class="expand-lbl">📅 Timeline</span>
-                                <span class="expand-val"><i class="bi bi-box-arrow-in-right me-1 text-primary"></i>{{ $job->date_in->format('d M Y') }}</span>
-                                @if($job->date_out)
-                                <span class="expand-sub"><i class="bi bi-box-arrow-right me-1"></i>{{ $job->date_out->format('d M Y') }}</span>
-                                @php $days = $job->date_in->diffInDays($job->date_out); @endphp
-                                <span class="expand-sub">Duration: {{ $days }} day{{ $days!=1?'s':'' }}</span>
-                                @else
-                                <span class="text-warning expand-sub"><i class="bi bi-clock me-1"></i>In progress since {{ $job->date_in->diffForHumans() }}</span>
-                                @endif
+                                <span class="expand-val"><i class="bi bi-box-arrow-in-right me-1 text-primary"></i><?php echo e($job->date_in->format('d M Y')); ?></span>
+                                <?php if($job->date_out): ?>
+                                <span class="expand-sub"><i class="bi bi-box-arrow-right me-1"></i><?php echo e($job->date_out->format('d M Y')); ?></span>
+                                <?php $days = $job->date_in->diffInDays($job->date_out); ?>
+                                <span class="expand-sub">Duration: <?php echo e($days); ?> day<?php echo e($days!=1?'s':''); ?></span>
+                                <?php else: ?>
+                                <span class="text-warning expand-sub"><i class="bi bi-clock me-1"></i>In progress since <?php echo e($job->date_in->diffForHumans()); ?></span>
+                                <?php endif; ?>
                             </div>
 
-                            {{-- Device Location --}}
+                            
                             <div class="expand-section">
                                 <span class="expand-lbl">📍 Device Location</span>
-                                @if(($job->device_location ?? 'With Us') === 'With Us')
+                                <?php if(($job->device_location ?? 'With Us') === 'With Us'): ?>
                                 <span class="expand-val"><span class="badge bg-primary" style="font-size:11px;">📦 With Us</span></span>
-                                @else
+                                <?php else: ?>
                                 <span class="expand-val"><span class="badge bg-warning text-dark" style="font-size:11px;">👤 With Customer</span></span>
-                                @endif
+                                <?php endif; ?>
                             </div>
 
-                            {{-- Payments --}}
+                            
                             <div class="expand-section">
                                 <span class="expand-lbl">💳 Payments</span>
-                                @if($job->payments->isEmpty())
+                                <?php if($job->payments->isEmpty()): ?>
                                 <span class="text-warning expand-sub">No payments recorded</span>
-                                @else
-                                @foreach($job->payments as $pmt)
-                                @php $isSplit = $pmt->notes && str_starts_with(trim($pmt->notes),'['); @endphp
-                                <span class="expand-val">£{{ number_format($pmt->amount,2) }} <span class="expand-sub">{{ $isSplit?'✂️ Split':$pmt->payment_type }}</span></span>
-                                @endforeach
-                                @endif
+                                <?php else: ?>
+                                <?php $__currentLoopData = $job->payments; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $pmt): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                <?php $isSplit = $pmt->notes && str_starts_with(trim($pmt->notes),'['); ?>
+                                <span class="expand-val">£<?php echo e(number_format($pmt->amount,2)); ?> <span class="expand-sub"><?php echo e($isSplit?'✂️ Split':$pmt->payment_type); ?></span></span>
+                                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+                                <?php endif; ?>
                             </div>
 
-                            {{-- Financial --}}
+                            
                             <div class="expand-section">
                                 <span class="expand-lbl">💰 Financial</span>
-                                <span class="expand-val">Total: £{{ number_format($job->totalAfterDiscount(),2) }}</span>
-                                @if($job->discount_type)
-                                <span class="text-success expand-sub">Discount: {{ $job->discount_type==='percent'?$job->discount_value.'%':'£'.number_format($job->discount_value,2) }} off</span>
-                                @endif
-                                @if($job->voucher_code)
-                                <span class="text-success expand-sub">🎟️ {{ $job->voucher_code }} applied</span>
-                                @endif
-                                <span class="expand-sub">Paid: £{{ number_format($job->totalPaid(),2) }}</span>
-                                @if($job->isPaidInFull())
+                                <span class="expand-val">Total: £<?php echo e(number_format($job->totalAfterDiscount(),2)); ?></span>
+                                <?php if($job->discount_type): ?>
+                                <span class="text-success expand-sub">Discount: <?php echo e($job->discount_type==='percent'?$job->discount_value.'%':'£'.number_format($job->discount_value,2)); ?> off</span>
+                                <?php endif; ?>
+                                <?php if($job->voucher_code): ?>
+                                <span class="text-success expand-sub">🎟️ <?php echo e($job->voucher_code); ?> applied</span>
+                                <?php endif; ?>
+                                <span class="expand-sub">Paid: £<?php echo e(number_format($job->totalPaid(),2)); ?></span>
+                                <?php if($job->isPaidInFull()): ?>
                                 <span class="text-success fw-bold expand-sub">✅ Fully Paid</span>
-                                @else
-                                <span class="text-danger fw-bold expand-sub">Balance: £{{ number_format($job->balanceDue(),2) }}</span>
-                                @endif
+                                <?php else: ?>
+                                <span class="text-danger fw-bold expand-sub">Balance: £<?php echo e(number_format($job->balanceDue(),2)); ?></span>
+                                <?php endif; ?>
                             </div>
 
-                            {{-- Notes --}}
-                            @if($job->notes)
+                            
+                            <?php if($job->notes): ?>
                             <div class="expand-section">
                                 <span class="expand-lbl">📋 Notes</span>
-                                <span class="expand-val" style="font-size:12px;line-height:1.5;">{{ Str::limit($job->notes,150) }}</span>
+                                <span class="expand-val" style="font-size:12px;line-height:1.5;"><?php echo e(Str::limit($job->notes,150)); ?></span>
                             </div>
-                            @endif
+                            <?php endif; ?>
 
                         </div>
 
                         <div class="expand-divider"></div>
 
-                        {{-- Quick Actions --}}
+                        
                         <div class="expand-actions">
-                            <a href="{{ route('jobs.show',$job) }}" class="btn btn-primary btn-sm">
+                            <a href="<?php echo e(route('jobs.show',$job)); ?>" class="btn btn-primary btn-sm">
                                 <i class="bi bi-eye me-1"></i>Full Details
                             </a>
-                            <a href="{{ route('jobs.edit',$job) }}" class="btn btn-outline-secondary btn-sm">
+                            <a href="<?php echo e(route('jobs.edit',$job)); ?>" class="btn btn-outline-secondary btn-sm">
                                 <i class="bi bi-pencil me-1"></i>Edit
                             </a>
-                            @if(!$job->isPaidInFull())
-                            <a href="{{ route('jobs.show',$job) }}" class="btn btn-outline-success btn-sm">
+                            <?php if(!$job->isPaidInFull()): ?>
+                            <a href="<?php echo e(route('jobs.show',$job)); ?>" class="btn btn-outline-success btn-sm">
                                 <i class="bi bi-credit-card me-1"></i>Add Payment
                             </a>
-                            @endif
-                            @if($job->status !== 'Completed')
-                            <form method="POST" action="{{ route('jobs.update-status',$job) }}" class="d-inline" onclick="event.stopPropagation()">
-                                @csrf @method('PATCH')
+                            <?php endif; ?>
+                            <?php if($job->status !== 'Completed'): ?>
+                            <form method="POST" action="<?php echo e(route('jobs.update-status',$job)); ?>" class="d-inline" onclick="event.stopPropagation()">
+                                <?php echo csrf_field(); ?> <?php echo method_field('PATCH'); ?>
                                 <input type="hidden" name="status" value="Completed">
                                 <button type="submit" class="btn btn-outline-success btn-sm">
                                     <i class="bi bi-check-circle me-1"></i>Mark Complete
                                 </button>
                             </form>
-                            @endif
+                            <?php endif; ?>
                         </div>
                     </div>
                 </td>
             </tr>
 
-            @empty
+            <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>
             <tr>
                 <td colspan="10" class="text-center py-5">
                     <div style="font-size:40px;opacity:.2;margin-bottom:12px;">🔧</div>
                     <div class="fw-semibold mb-1">No jobs found</div>
                     <div class="text-secondary small mb-3">
-                        @if($hasFilters) Try adjusting your filters @else No repair jobs yet @endif
+                        <?php if($hasFilters): ?> Try adjusting your filters <?php else: ?> No repair jobs yet <?php endif; ?>
                     </div>
-                    @if($hasFilters)
-                    <a href="{{ route('jobs.index') }}" class="btn btn-outline-secondary btn-sm me-2">Clear Filters</a>
-                    @endif
-                    <a href="{{ route('jobs.create') }}" class="btn btn-primary btn-sm"><i class="bi bi-plus-lg me-1"></i>Create First Job</a>
+                    <?php if($hasFilters): ?>
+                    <a href="<?php echo e(route('jobs.index')); ?>" class="btn btn-outline-secondary btn-sm me-2">Clear Filters</a>
+                    <?php endif; ?>
+                    <a href="<?php echo e(route('jobs.create')); ?>" class="btn btn-primary btn-sm"><i class="bi bi-plus-lg me-1"></i>Create First Job</a>
                 </td>
             </tr>
-            @endforelse
+            <?php endif; ?>
             </tbody>
         </table>
     </div>
 
-    {{-- Pagination --}}
-    @if($jobs->hasPages())
+    
+    <?php if($jobs->hasPages()): ?>
     <div class="px-4 py-3 border-top d-flex align-items-center justify-content-between flex-wrap gap-2">
         <div class="text-secondary" style="font-size:12px;">
-            Showing {{ $jobs->firstItem() }}–{{ $jobs->lastItem() }} of {{ $jobs->total() }} jobs
+            Showing <?php echo e($jobs->firstItem()); ?>–<?php echo e($jobs->lastItem()); ?> of <?php echo e($jobs->total()); ?> jobs
         </div>
-        <div>{{ $jobs->links() }}</div>
+        <div><?php echo e($jobs->links()); ?></div>
     </div>
-    @endif
+    <?php endif; ?>
 </div>
-@endsection
+<?php $__env->stopSection(); ?>
 
-@push('scripts')
+<?php $__env->startPush('scripts'); ?>
 <script>
 // ── Status dropdown ───────────────────────────────────────────────
-var allStatuses = {!! json_encode(\App\Models\Job::statuses()) !!};
+var allStatuses = <?php echo json_encode(\App\Models\Job::statuses()); ?>;
 
 function updateStatusDropdown() {
     var checked = Array.from(document.querySelectorAll('.status-chk:checked')).map(function(c){return c.value;});
@@ -680,7 +685,7 @@ document.addEventListener('click', function(e) {
 });
 
 function fetchSuggestions(q) {
-    fetch('{{ route("jobs.index") }}?search_suggest=1&q=' + encodeURIComponent(q), {
+    fetch('<?php echo e(route("jobs.index")); ?>?search_suggest=1&q=' + encodeURIComponent(q), {
         headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' }
     })
     .then(function(r) { return r.json(); })
@@ -781,4 +786,5 @@ function toggleExpand(jobId, rowEl) {
     }, 60);
 }
 </script>
-@endpush
+<?php $__env->stopPush(); ?>
+<?php echo $__env->make('layouts.app', \Illuminate\Support\Arr::except(get_defined_vars(), ['__data', '__path']))->render(); ?><?php /**PATH D:\Claud AI\new18\mobileshop\resources\views/jobs/index.blade.php ENDPATH**/ ?>

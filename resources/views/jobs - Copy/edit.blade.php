@@ -86,11 +86,27 @@
             </div>
 
             {{-- Customer preview + history --}}
-            @include('jobs._customer_preview', [
-                'selectId'   => 'edit_customer_select',
-                'previewId'  => 'edit-customer',
-                'customer'   => $job->customer,
-            ])
+            <div id="edit-customer-preview" class="mt-3">
+                <div class="d-flex align-items-center gap-3 p-3 rounded-3" style="background:var(--bs-tertiary-bg);border:1px solid var(--bs-border-color);">
+                    <div id="edit-customer-avatar" style="width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,#0d6efd,#0099ff);display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:800;color:#fff;flex-shrink:0;">{{ strtoupper(substr($job->customer->name,0,1)) }}</div>
+                    <div class="flex-grow-1 min-width-0">
+                        <div class="fw-bold" id="edit-preview-name" style="font-size:14px;">{{ $job->customer->name }}</div>
+                        <div class="d-flex flex-wrap gap-3 mt-1">
+                            <span id="edit-preview-phone" class="text-secondary" style="font-size:11px;{{ $job->customer->phone?'':'display:none;' }}"><i class="bi bi-telephone me-1"></i><span>{{ $job->customer->phone }}</span></span>
+                            <span id="edit-preview-email" class="text-secondary" style="font-size:11px;{{ $job->customer->email?'':'display:none;' }}"><i class="bi bi-envelope me-1"></i><span>{{ $job->customer->email }}</span></span>
+                            <span id="edit-preview-address" class="text-secondary" style="font-size:11px;{{ $job->customer->address?'':'display:none;' }}"><i class="bi bi-geo-alt me-1"></i><span>{{ $job->customer->address }}</span></span>
+                        </div>
+                    </div>
+                    <div class="d-flex align-items-center gap-2 flex-shrink-0">
+                        <span id="edit-history-loading" style="display:none;"><span class="spinner-border spinner-border-sm text-secondary"></span></span>
+                        <div id="edit-history-stats" style="display:none;text-align:right;">
+                            <div style="font-size:11px;font-weight:700;font-family:'Syne',sans-serif;" id="edit-stat-spent" class="text-success"></div>
+                            <div style="font-size:10px;" id="edit-stat-due" class="text-danger"></div>
+                        </div>
+                        <a id="edit-view-all-jobs" href="{{ route('customers.show',$job->customer) }}" target="_blank" class="btn btn-sm btn-outline-secondary" style="font-size:11px;display:none;"></a>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -142,7 +158,7 @@
                         </div>
                         <div class="col-sm-4"><label class="form-label">Status</label>
                             <select name="devices[{{ $di }}][repair_status]" class="form-select form-select-sm no-ts">
-                                @foreach(\App\Models\Job::statuses() as $s)
+                                @foreach(['In Progress','Completed','Waiting Parts','Ready for Collection','Cancelled'] as $s)
                                 <option value="{{ $s }}" {{ $dStatus===$s?'selected':'' }}>{{ $s }}</option>
                                 @endforeach
                             </select>
@@ -171,13 +187,10 @@
             </div>
             <div class="row g-3">
                 <div class="col-sm-4"><label class="form-label">Status</label>
-                    @include('jobs._status_select', ['selected' => $job->status])
-                </div>
-                <div class="col-sm-4">
-                    <label class="form-label">📍 Device Location</label>
-                    <select class="form-select no-ts" name="device_location">
-                        <option value="With Us"       {{ ($job->device_location ?? 'With Us')==='With Us'?'selected':'' }}>📦 With Us</option>
-                        <option value="With Customer" {{ ($job->device_location ?? '')==='With Customer'?'selected':'' }}>👤 With Customer</option>
+                    <select class="form-select" name="status">
+                        @foreach(['In Progress','Completed','Waiting Parts','Ready for Collection','Cancelled'] as $s)
+                        <option value="{{ $s }}" {{ $job->status===$s?'selected':'' }}>{{ $s }}</option>
+                        @endforeach
                     </select>
                 </div>
                 <div class="col-sm-4"><label class="form-label">Book-In Date</label><input type="date" class="form-control" name="date_in" value="{{ $job->date_in?->format('Y-m-d') }}"></div>
@@ -268,11 +281,10 @@
                             <i class="bi bi-pencil"></i>
                         </button>
                         @endif
-                        <button type="button" class="btn btn-xs btn-outline-danger" style="padding:1px 6px;font-size:10px;"
-                            onclick="deletePayment({{ $pmt->id }}, this)"
-                            title="Delete payment">
-                            <i class="bi bi-trash"></i>
-                        </button>
+                        <form method="POST" action="{{ route('payments.destroy',$pmt) }}" class="d-inline" onsubmit="return confirm('Remove?')">
+                            @csrf @method('DELETE')
+                            <button type="submit" class="btn btn-xs btn-outline-danger" style="padding:1px 6px;font-size:10px;"><i class="bi bi-trash"></i></button>
+                        </form>
                     </div>
                 </div>
                 @endforeach
@@ -321,7 +333,7 @@
             </div>
             <div class="col-sm-4"><label class="form-label">Status</label>
                 <select name="devices[__DIDX__][repair_status]" class="form-select form-select-sm no-ts">
-                    @foreach(\App\Models\Job::statuses() as $s)<option value="{{ $s }}" {{ $s==='In Progress'?'selected':'' }}>{{ $s }}</option>@endforeach
+                    @foreach(['In Progress','Completed','Waiting Parts','Ready for Collection','Cancelled'] as $s)<option value="{{ $s }}" {{ $s==='In Progress'?'selected':'' }}>{{ $s }}</option>@endforeach
                 </select>
             </div>
             <div class="col-sm-3"><label class="form-label">Price £</label>
@@ -564,7 +576,49 @@
 </div>
 
 {{-- Customer Modal (Add / Edit) --}}
-@include('jobs._customer_modal')
+<div class="modal fade" id="customer-modal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header border-0 pb-0">
+                <h5 class="modal-title fw-bold" id="customer-modal-title">
+                    <i class="bi bi-person-plus me-2 text-success"></i>Add New Customer
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body pt-3">
+                <div id="modal-error" class="alert alert-danger py-2 small" style="display:none;"></div>
+                <div class="row g-3">
+                    <div class="col-12">
+                        <label class="form-label">Full Name *</label>
+                        <input type="text" class="form-control" id="new_name" placeholder="e.g. James Wilson">
+                    </div>
+                    <div class="col-sm-6">
+                        <label class="form-label">Phone</label>
+                        <input type="text" class="form-control" id="new_phone" placeholder="07700 900000">
+                    </div>
+                    <div class="col-sm-6">
+                        <label class="form-label">Email</label>
+                        <input type="email" class="form-control" id="new_email" placeholder="email@example.com">
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label">Address</label>
+                        <input type="text" class="form-control" id="new_address" placeholder="e.g. 12 High Street, London">
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label">Notes</label>
+                        <textarea class="form-control" id="new_notes" rows="2" placeholder="Any notes about this customer..."></textarea>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer border-0 pt-0">
+                <button onclick="saveCustomer()" class="btn btn-success px-4" id="save-customer-btn">
+                    <i class="bi bi-check-lg me-1"></i> <span id="save-customer-lbl">Save Customer</span>
+                </button>
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+            </div>
+        </div>
+    </div>
+</div>
 
 @endsection
 
@@ -598,18 +652,14 @@ function recalc() {
     const dType      = document.getElementById('discount_type').value;
     const dVal       = parseFloat(document.getElementById('discount_value').value)||0;
     const vfEl       = document.getElementById('voucher_code_hidden');
-    const voucherAmt = vfEl ? (parseFloat(vfEl.dataset.amount)||0) : 0;
-    const voucherCode= vfEl ? (vfEl.value || '') : '';
+    const vAmt       = vfEl ? (parseFloat(vfEl.dataset.amount)||0) : 0;
+    const vCode      = vfEl ? vfEl.value : '';
     const totalPaid  = parseFloat('{{ $job->totalPaid() }}') || 0;
 
     let disc = 0;
     if (dType==='percent') disc = subtotal*dVal/100;
     else if (dType==='fixed') disc = Math.min(dVal,subtotal);
-
-    // Cap voucher to available amount — never go negative
-    const afterDiscBeforeVoucher = Math.max(0, subtotal - disc);
-    const actualVoucherDeduction = Math.min(voucherAmt, afterDiscBeforeVoucher);
-    const afterDisc  = Math.max(0, afterDiscBeforeVoucher - actualVoucherDeduction);
+    const afterDisc  = Math.max(0, subtotal - disc - vAmt);
     const balanceDue = Math.max(0, afterDisc - totalPaid);
 
     document.getElementById('summary-subtotal').textContent = '£'+subtotal.toFixed(2);
@@ -623,19 +673,12 @@ function recalc() {
         document.getElementById('val-discount').textContent = '-£'+disc.toFixed(2);
     } else { rowDisc.style.display='none'; }
 
-    // Voucher row — show whenever applied, even at £0 subtotal
+    // Voucher row
     const rowVouch = document.getElementById('row-voucher');
-    if (voucherAmt > 0 && voucherCode) {
+    if (vAmt > 0 && vCode) {
         rowVouch.style.display='flex';
-        document.getElementById('lbl-voucher').textContent = '🎟️ ' + voucherCode;
-        const valEl = document.getElementById('val-voucher');
-        if (subtotal === 0) {
-            valEl.textContent = '-£' + voucherAmt.toFixed(2) + ' (pending)';
-            valEl.style.opacity = '0.6';
-        } else {
-            valEl.textContent = '-£' + actualVoucherDeduction.toFixed(2);
-            valEl.style.opacity = '1';
-        }
+        document.getElementById('lbl-voucher').textContent = '🎟️ '+vCode;
+        document.getElementById('val-voucher').textContent = '-£'+vAmt.toFixed(2);
     } else { rowVouch.style.display='none'; }
 
     // Balance due box
@@ -664,36 +707,6 @@ function recalc() {
         else if (currentDiscType==='fixed') md=Math.min(mv,subtotal);
         prev.textContent = md>0 ? 'Saves £'+md.toFixed(2)+' on £'+subtotal.toFixed(2)+' subtotal' : '';
     }
-}
-
-// ── Delete payment via fetch (avoids nested form / accidental DELETE on job) ──
-function deletePayment(paymentId, btn) {
-    if (!confirm('Remove this payment?')) return;
-    btn.disabled = true;
-    fetch('/payments/' + paymentId, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/x-www-form-urlencoded',
-            'X-CSRF-TOKEN': '{{ csrf_token() }}'
-        },
-        body: '_method=DELETE'
-    })
-    .then(function(r) {
-        if (r.ok) {
-            // Remove the payment row from DOM
-            var row = btn.closest('.d-flex.align-items-center.justify-content-between');
-            if (row) row.remove();
-            // Reload page to refresh totals
-            window.location.reload();
-        } else {
-            alert('Failed to delete payment. Please try again.');
-            btn.disabled = false;
-        }
-    })
-    .catch(function() {
-        alert('Network error. Please try again.');
-        btn.disabled = false;
-    });
 }
 
 // ── Add payment modal ─────────────────────────────────────────────
@@ -971,7 +984,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // ── Load initial customer history ─────────────────────────────
     var initCustomerId = '{{ $job->customer_id }}';
-    if (initCustomerId) { loadCustomerHistory(initCustomerId, 'edit-customer'); }
+    if (initCustomerId) { loadEditCustomerHistory(initCustomerId); }
 
     // ── Smart pin summary card ────────────────────────────────────
     var summaryCard  = document.getElementById('summary-card');
@@ -1021,23 +1034,192 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // ── Customer change handler ───────────────────────────────────────
 function onEditCustomerChange(sel) {
-    var id      = sel.value;
-    var opt     = sel.querySelector('option[value="' + id + '"]');
+    var id   = sel.value;
+    var opt  = sel.querySelector('option[value="' + id + '"]');
     var name    = opt ? opt.text.split(' · ')[0].trim() : '';
     var phone   = opt ? (opt.dataset.phone   || '') : '';
     var email   = opt ? (opt.dataset.email   || '') : '';
     var address = opt ? (opt.dataset.address || '') : '';
-    updateCustomerPreview(id, { name, phone, email, address }, 'edit-customer');
+
+    var avatar = document.getElementById('edit-customer-avatar');
+    if (avatar) avatar.textContent = name.charAt(0).toUpperCase();
+    var nameEl = document.getElementById('edit-preview-name');
+    if (nameEl) nameEl.textContent = name;
+
+    var phEl = document.getElementById('edit-preview-phone');
+    if (phEl) { phEl.querySelector('span').textContent = phone; phEl.style.display = phone ? '' : 'none'; }
+    var emEl = document.getElementById('edit-preview-email');
+    if (emEl) { emEl.querySelector('span').textContent = email; emEl.style.display = email ? '' : 'none'; }
+    var adEl = document.getElementById('edit-preview-address');
+    if (adEl) { adEl.querySelector('span').textContent = address; adEl.style.display = address ? '' : 'none'; }
+
+    if (id) { loadEditCustomerHistory(id); }
 }
 
-// Wire up shared partial's onCustomerSelected callback for edit page
-window.onCustomerSelected = function(id, customer) {
-    window._activeCustomerSelectId = 'edit_customer_select';
-    updateCustomerPreview(id, customer, 'edit-customer');
-};
+function loadEditCustomerHistory(customerId) {
+    var statsEl   = document.getElementById('edit-history-stats');
+    var loadingEl = document.getElementById('edit-history-loading');
+    var jobsLink  = document.getElementById('edit-view-all-jobs');
+    if (!statsEl) return;
+    statsEl.style.display   = 'none';
+    jobsLink.style.display  = 'none';
+    loadingEl.style.display = 'inline-block';
+
+    fetch('/customers/' + customerId + '/json', {
+        headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+        loadingEl.style.display = 'none';
+        document.getElementById('edit-stat-spent').textContent = '£' + data.total_spent + ' spent';
+        var dueEl = document.getElementById('edit-stat-due');
+        var due   = parseFloat(data.total_due) || 0;
+        dueEl.textContent   = due > 0 ? '£' + data.total_due + ' outstanding' : 'No balance due';
+        dueEl.style.display = '';
+        jobsLink.href        = '/customers/' + customerId;
+        jobsLink.innerHTML   = data.job_count + ' Job' + (data.job_count !== 1 ? 's' : '') + ' <i class="bi bi-box-arrow-up-right ms-1" style="font-size:9px;"></i>';
+        jobsLink.style.display = '';
+        statsEl.style.display  = 'block';
+    })
+    .catch(function() { loadingEl.style.display = 'none'; });
+}
+// ── Customer modal ────────────────────────────────────────────────
+var customerModalMode  = 'add';
+var editingCustomerId  = null;
+
+function getCustomerModal() {
+    return bootstrap.Modal.getOrCreateInstance(document.getElementById('customer-modal'));
+}
+
+function resetCustomerModal() {
+    document.getElementById('modal-error').style.display = 'none';
+    ['new_name','new_phone','new_email','new_address','new_notes'].forEach(function(id) {
+        var el = document.getElementById(id); if (el) el.value = '';
+    });
+}
+
+function openCustomerModal() {
+    customerModalMode = 'add';
+    editingCustomerId = null;
+    document.getElementById('customer-modal-title').innerHTML = '<i class="bi bi-person-plus me-2 text-success"></i>Add New Customer';
+    document.getElementById('save-customer-lbl').textContent  = 'Save Customer';
+    document.getElementById('save-customer-btn').className    = 'btn btn-success px-4';
+    resetCustomerModal();
+    getCustomerModal().show();
+    setTimeout(function() { var n = document.getElementById('new_name'); if(n) n.focus(); }, 400);
+}
+
+async function openEditCustomerModal() {
+    var sel = document.getElementById('edit_customer_select');
+    var id  = sel ? sel.value : '';
+    if (!id) return;
+    customerModalMode = 'edit';
+    editingCustomerId = id;
+    document.getElementById('customer-modal-title').innerHTML = '<i class="bi bi-pencil me-2 text-primary"></i>Edit Customer';
+    document.getElementById('save-customer-lbl').textContent  = 'Update Customer';
+    document.getElementById('save-customer-btn').className    = 'btn btn-primary px-4';
+    resetCustomerModal();
+    var opt = sel.querySelector('option[value="' + id + '"]');
+    if (opt) {
+        document.getElementById('new_name').value    = opt.text.split(' · ')[0].trim();
+        document.getElementById('new_phone').value   = opt.dataset.phone   || '';
+        document.getElementById('new_email').value   = opt.dataset.email   || '';
+        document.getElementById('new_address').value = opt.dataset.address || '';
+        document.getElementById('new_notes').value   = opt.dataset.notes   || '';
+    }
+    getCustomerModal().show();
+    try {
+        var res = await fetch('/customers/' + id + '/json', { headers: {'Accept':'application/json','X-CSRF-TOKEN':'{{ csrf_token() }}'} });
+        if (res.ok) {
+            var c = await res.json();
+            document.getElementById('new_name').value    = c.name    || '';
+            document.getElementById('new_phone').value   = c.phone   || '';
+            document.getElementById('new_email').value   = c.email   || '';
+            document.getElementById('new_address').value = c.address || '';
+            document.getElementById('new_notes').value   = c.notes   || '';
+        }
+    } catch(e) {}
+}
+
+async function saveCustomer() {
+    var name    = document.getElementById('new_name').value.trim();
+    var phone   = document.getElementById('new_phone').value.trim();
+    var email   = document.getElementById('new_email').value.trim();
+    var address = document.getElementById('new_address').value.trim();
+    var notes   = document.getElementById('new_notes').value.trim();
+    var errEl   = document.getElementById('modal-error');
+    var btn     = document.getElementById('save-customer-btn');
+    var lblSpan = document.getElementById('save-customer-lbl');
+
+    if (!name) { errEl.textContent = 'Name is required.'; errEl.style.display = 'block'; return; }
+
+    var isEdit = customerModalMode === 'edit';
+    var url    = isEdit ? '/customers/' + editingCustomerId : '{{ route("customers.store") }}';
+    if (lblSpan) lblSpan.textContent = 'Saving...';
+    btn.disabled = true; errEl.style.display = 'none';
+
+    try {
+        var res  = await fetch(url, {
+            method:  isEdit ? 'PUT' : 'POST',
+            headers: {'Content-Type':'application/json','X-CSRF-TOKEN':'{{ csrf_token() }}','Accept':'application/json'},
+            body:    JSON.stringify({name, phone, email, address, notes})
+        });
+        var data = await res.json();
+
+        if (data.success || (isEdit && res.ok)) {
+            var customer = data.customer || {id: editingCustomerId, name, phone, email, address};
+            var label    = customer.name + (customer.phone ? ' · ' + customer.phone : '');
+            var sel      = document.getElementById('edit_customer_select');
+
+            if (isEdit) {
+                var existingOpt = sel.querySelector('option[value="' + customer.id + '"]');
+                if (existingOpt) {
+                    existingOpt.text            = label;
+                    existingOpt.dataset.phone   = customer.phone   || '';
+                    existingOpt.dataset.email   = customer.email   || '';
+                    existingOpt.dataset.address = customer.address || '';
+                    existingOpt.dataset.notes   = notes;
+                }
+                if (sel.tomselect) {
+                    sel.tomselect.updateOption(String(customer.id), {value: String(customer.id), text: label});
+                    sel.tomselect.refreshOptions(false);
+                    sel.tomselect.setValue(String(customer.id), true);
+                }
+            } else {
+                var newOpt           = new Option(label, customer.id, true, true);
+                newOpt.dataset.phone   = customer.phone   || '';
+                newOpt.dataset.email   = customer.email   || '';
+                newOpt.dataset.address = customer.address || '';
+                newOpt.dataset.notes   = notes;
+                sel.appendChild(newOpt);
+                if (sel.tomselect) {
+                    sel.tomselect.addOption({value: String(customer.id), text: label});
+                    sel.tomselect.setValue(String(customer.id));
+                } else { sel.value = String(customer.id); }
+            }
+
+            // Refresh preview
+            var avatar = document.getElementById('edit-customer-avatar');
+            if (avatar) avatar.textContent = customer.name.charAt(0).toUpperCase();
+            var nameEl = document.getElementById('edit-preview-name');
+            if (nameEl) nameEl.textContent = customer.name;
+            var phEl = document.getElementById('edit-preview-phone');
+            if (phEl) { phEl.querySelector('span').textContent = customer.phone || ''; phEl.style.display = customer.phone ? '' : 'none'; }
+            var emEl = document.getElementById('edit-preview-email');
+            if (emEl) { emEl.querySelector('span').textContent = customer.email || ''; emEl.style.display = customer.email ? '' : 'none'; }
+
+            if (customer.id) { loadEditCustomerHistory(customer.id); }
+            getCustomerModal().hide();
+        } else {
+            errEl.textContent = Object.values(data.errors || {}).flat().join(' ') || data.message || 'Error saving.';
+            errEl.style.display = 'block';
+        }
+    } catch(e) {
+        errEl.textContent = 'Network error. Please try again.';
+        errEl.style.display = 'block';
+    }
+    if (lblSpan) lblSpan.textContent = isEdit ? 'Update Customer' : 'Save Customer';
+    btn.disabled = false;
+}
 </script>
-
-{{-- Shared customer modal JS --}}
-@include('jobs._customer_js')
-
 @endpush

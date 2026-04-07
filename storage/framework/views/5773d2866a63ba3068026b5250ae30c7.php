@@ -3,17 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>@yield('title', 'Mobile Shop') — Repair Tracker</title>
+    <title><?php echo $__env->yieldContent('title', 'Mobile Shop'); ?> — Repair Tracker</title>
 
-    {{-- Bootstrap 5 --}}
+    
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    {{-- Bootstrap Icons --}}
+    
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
-    {{-- Tom Select --}}
+    
     <link href="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/css/tom-select.bootstrap5.min.css" rel="stylesheet">
-    {{-- Google Fonts --}}
+    
     <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
-    @stack('styles')
+    <?php echo $__env->yieldPushContent('styles'); ?>
 
     <style>
         /* ── Page Loader ─────────────────────────────────────────── */
@@ -177,16 +177,16 @@
 </head>
 <body>
 
-{{-- ── Page Loader ──────────────────────────────────────────────── --}}
+
 <div id="page-loader">
     <div class="loader-spinner"></div>
     <div class="loader-text">📱 Loading...</div>
 </div>
 
-{{-- ── Sidebar overlay (mobile) ─────────────────────────────────── --}}
+
 <div class="sidebar-overlay" id="sidebar-overlay" onclick="closeSidebar()"></div>
 
-{{-- ── Sidebar ──────────────────────────────────────────────────── --}}
+
 <aside id="sidebar">
     <div class="sidebar-logo">
         <span style="font-size:26px;">📱</span>
@@ -197,116 +197,117 @@
     </div>
 
     <nav class="flex-column pt-1 pb-2">
-        @php $u = auth()->user(); @endphp
+        <?php $u = auth()->user(); ?>
 
         <div class="nav-section-label">Main</div>
-        <a href="{{ route('dashboard') }}" class="nav-link {{ request()->routeIs('dashboard') ? 'active' : '' }}">
+        <a href="<?php echo e(route('dashboard')); ?>" class="nav-link <?php echo e(request()->routeIs('dashboard') ? 'active' : ''); ?>">
             <span class="nav-icon">🏠</span> Dashboard
         </a>
 
-        @if($u->hasPermission('parts.view'))
+        <?php if($u->hasPermission('parts.view')): ?>
         <div class="nav-section-label mt-1">Stock</div>
-        @if($u->hasPermission('repair-types.manage'))
-        <a href="{{ route('categories.index') }}" class="nav-link {{ request()->routeIs('categories.*') ? 'active' : '' }}">
+        <?php if($u->hasPermission('repair-types.manage')): ?>
+        <a href="<?php echo e(route('categories.index')); ?>" class="nav-link <?php echo e(request()->routeIs('categories.*') ? 'active' : ''); ?>">
             <span class="nav-icon">🏷️</span> Brands
         </a>
-        @endif
-        <a href="{{ route('parts.index') }}" class="nav-link {{ request()->routeIs('parts.*') ? 'active' : '' }}">
+        <?php endif; ?>
+        <a href="<?php echo e(route('parts.index')); ?>" class="nav-link <?php echo e(request()->routeIs('parts.*') ? 'active' : ''); ?>">
             <span class="nav-icon">🗃️</span> Repair Stock
         </a>
-        @endif
+        <?php endif; ?>
 
         <div class="nav-section-label mt-1">Repairs</div>
-        @if($u->hasPermission('repair-types.manage'))
-        <a href="{{ route('repair-types.index') }}" class="nav-link {{ request()->routeIs('repair-types.*') ? 'active' : '' }}">
+        <?php if($u->hasPermission('repair-types.manage')): ?>
+        <a href="<?php echo e(route('repair-types.index')); ?>" class="nav-link <?php echo e(request()->routeIs('repair-types.*') ? 'active' : ''); ?>">
             <span class="nav-icon">🔩</span> Repair Types
         </a>
-        @endif
-        @if($u->hasPermission('customers.view'))
-        <a href="{{ route('customers.index') }}" class="nav-link {{ request()->routeIs('customers.*') ? 'active' : '' }}">
+        <?php endif; ?>
+        <?php if($u->hasPermission('customers.view')): ?>
+        <a href="<?php echo e(route('customers.index')); ?>" class="nav-link <?php echo e(request()->routeIs('customers.*') ? 'active' : ''); ?>">
             <span class="nav-icon">👥</span> Customers
         </a>
-        @endif
-        @if($u->hasPermission('jobs.view'))
-        <a href="{{ route('jobs.index') }}" class="nav-link {{ request()->routeIs('jobs.*') ? 'active' : '' }}">
+        <?php endif; ?>
+        <?php if($u->hasPermission('jobs.view')): ?>
+        <a href="<?php echo e(route('jobs.index')); ?>" class="nav-link <?php echo e(request()->routeIs('jobs.*') ? 'active' : ''); ?>">
             <span class="nav-icon">🔧</span> Jobs
         </a>
-        @endif
+        <?php endif; ?>
 
-        @if($u->hasPermission('phone-deals.view'))
+        <?php if($u->hasPermission('phone-deals.view')): ?>
         <div class="nav-section-label mt-1">Deals</div>
-        <a href="{{ route('phone-deals.index') }}" class="nav-link {{ request()->routeIs('phone-deals.*') ? 'active' : '' }}">
+        <a href="<?php echo e(route('phone-deals.index')); ?>" class="nav-link <?php echo e(request()->routeIs('phone-deals.*') ? 'active' : ''); ?>">
             <span class="nav-icon">📲</span> Phone Deals
         </a>
-        <a href="{{ route('inventory.index') }}" class="nav-link {{ request()->routeIs('inventory.*') ? 'active' : '' }}">
+        <a href="<?php echo e(route('inventory.index')); ?>" class="nav-link <?php echo e(request()->routeIs('inventory.*') ? 'active' : ''); ?>">
             <span class="nav-icon">📦</span> Inventory
         </a>
-        @if($u->hasPermission('repair-types.manage'))
-        <a href="{{ route('device-categories.index') }}" class="nav-link {{ request()->routeIs('device-categories.*') ? 'active' : '' }}">
+        <?php if($u->hasPermission('repair-types.manage')): ?>
+        <a href="<?php echo e(route('device-categories.index')); ?>" class="nav-link <?php echo e(request()->routeIs('device-categories.*') ? 'active' : ''); ?>">
             <span class="nav-icon">🏷️</span> Device Types
         </a>
-        @endif
-        <a href="{{ route('terms.index') }}" class="nav-link {{ request()->routeIs('terms.*') ? 'active' : '' }}">
+        <?php endif; ?>
+        <a href="<?php echo e(route('terms.index')); ?>" class="nav-link <?php echo e(request()->routeIs('terms.*') ? 'active' : ''); ?>">
             <span class="nav-icon">📄</span> Terms & Conditions
         </a>
-        @endif
+        <?php endif; ?>
 
-        @if($u->hasPermission('vouchers.view'))
-        <a href="{{ route('vouchers.index') }}" class="nav-link {{ request()->routeIs('vouchers.*') ? 'active' : '' }}">
+        <?php if($u->hasPermission('vouchers.view')): ?>
+        <a href="<?php echo e(route('vouchers.index')); ?>" class="nav-link <?php echo e(request()->routeIs('vouchers.*') ? 'active' : ''); ?>">
             <span class="nav-icon">🎟️</span> Vouchers
         </a>
-        @endif
+        <?php endif; ?>
 
         <div class="nav-section-label mt-1">System</div>
-        @if($u->hasPermission('users.view'))
-        <a href="{{ route('users.index') }}" class="nav-link {{ request()->routeIs('users.*') ? 'active' : '' }}">
+        <?php if($u->hasPermission('users.view')): ?>
+        <a href="<?php echo e(route('users.index')); ?>" class="nav-link <?php echo e(request()->routeIs('users.*') ? 'active' : ''); ?>">
             <span class="nav-icon">👤</span> Users
         </a>
-        @endif
-        @if($u->hasPermission('settings.view'))
-        <a href="{{ route('settings.index') }}" class="nav-link {{ request()->routeIs('settings.*') ? 'active' : '' }}">
+        <?php endif; ?>
+        <?php if($u->hasPermission('settings.view')): ?>
+        <a href="<?php echo e(route('settings.index')); ?>" class="nav-link <?php echo e(request()->routeIs('settings.*') ? 'active' : ''); ?>">
             <span class="nav-icon">⚙️</span> Settings
         </a>
-        @endif
+        <?php endif; ?>
     </nav>
 
     <div class="mt-auto px-3 py-2 border-top" style="font-size:10px;opacity:.4;text-align:center;">Mobile Shop v1.0</div>
 </aside>
 
-{{-- ── Topbar ───────────────────────────────────────────────────── --}}
+
 <div id="topbar">
     <div class="d-flex align-items-center gap-2">
         <button onclick="toggleSidebar()" class="btn btn-sm btn-outline-secondary border-0" title="Toggle sidebar">
             <i class="bi bi-list fs-5"></i>
         </button>
-        <span class="topbar-title">@yield('title','Dashboard')</span>
+        <span class="topbar-title"><?php echo $__env->yieldContent('title','Dashboard'); ?></span>
     </div>
     <div class="d-flex align-items-center gap-2 flex-wrap">
-        @yield('topbar-actions')
+        <?php echo $__env->yieldContent('topbar-actions'); ?>
 
-        {{-- Theme toggle --}}
+        
         <button id="theme-toggle" title="Toggle dark/light mode">🌙</button>
 
-        {{-- User menu --}}
+        
         <div class="vr mx-1"></div>
         <div class="dropdown">
             <button class="btn btn-sm btn-outline-secondary border-0 d-flex align-items-center gap-2" data-bs-toggle="dropdown">
                 <span class="d-flex align-items-center justify-content-center rounded-circle bg-primary text-white fw-bold" style="width:28px;height:28px;font-size:12px;">
-                    {{ strtoupper(substr(auth()->user()->name,0,1)) }}
+                    <?php echo e(strtoupper(substr(auth()->user()->name,0,1))); ?>
+
                 </span>
-                <span class="d-none d-md-inline" style="font-size:13px;">{{ auth()->user()->name }}</span>
+                <span class="d-none d-md-inline" style="font-size:13px;"><?php echo e(auth()->user()->name); ?></span>
                 <i class="bi bi-chevron-down" style="font-size:10px;"></i>
             </button>
             <ul class="dropdown-menu dropdown-menu-end">
-                <li><span class="dropdown-item-text small text-muted">{{ auth()->user()->email }}</span></li>
-                <li><span class="dropdown-item-text small"><span class="badge bg-primary">{{ ucfirst(auth()->user()->role) }}</span></span></li>
+                <li><span class="dropdown-item-text small text-muted"><?php echo e(auth()->user()->email); ?></span></li>
+                <li><span class="dropdown-item-text small"><span class="badge bg-primary"><?php echo e(ucfirst(auth()->user()->role)); ?></span></span></li>
                 <li><hr class="dropdown-divider"></li>
-                @if(auth()->user()->hasPermission('users.view'))
-                <li><a class="dropdown-item" href="{{ route('users.index') }}"><i class="bi bi-people me-2"></i>Manage Users</a></li>
-                @endif
+                <?php if(auth()->user()->hasPermission('users.view')): ?>
+                <li><a class="dropdown-item" href="<?php echo e(route('users.index')); ?>"><i class="bi bi-people me-2"></i>Manage Users</a></li>
+                <?php endif; ?>
                 <li>
-                    <form method="POST" action="{{ route('logout') }}">
-                        @csrf
+                    <form method="POST" action="<?php echo e(route('logout')); ?>">
+                        <?php echo csrf_field(); ?>
                         <button type="submit" class="dropdown-item text-danger"><i class="bi bi-box-arrow-right me-2"></i>Sign Out</button>
                     </form>
                 </li>
@@ -315,39 +316,39 @@
     </div>
 </div>
 
-{{-- ── Main Content ─────────────────────────────────────────────── --}}
+
 <div id="main-content">
 
-    {{-- Alerts --}}
-    @if(session('success'))
+    
+    <?php if(session('success')): ?>
     <div class="alert alert-success alert-dismissible d-flex align-items-center gap-2 mb-3" role="alert">
         <i class="bi bi-check-circle-fill"></i>
-        <div>{{ session('success') }}</div>
+        <div><?php echo e(session('success')); ?></div>
         <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
     </div>
-    @endif
-    @if(session('error'))
+    <?php endif; ?>
+    <?php if(session('error')): ?>
     <div class="alert alert-danger alert-dismissible d-flex align-items-center gap-2 mb-3" role="alert">
         <i class="bi bi-exclamation-triangle-fill"></i>
-        <div>{{ session('error') }}</div>
+        <div><?php echo e(session('error')); ?></div>
         <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
     </div>
-    @endif
-    @if($errors->any())
+    <?php endif; ?>
+    <?php if($errors->any()): ?>
     <div class="alert alert-danger alert-dismissible mb-3" role="alert">
         <i class="bi bi-exclamation-triangle-fill me-2"></i>
-        @foreach($errors->all() as $e)<div>{{ $e }}</div>@endforeach
+        <?php $__currentLoopData = $errors->all(); $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $e): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?><div><?php echo e($e); ?></div><?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
         <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
     </div>
-    @endif
+    <?php endif; ?>
 
-    @yield('content')
+    <?php echo $__env->yieldContent('content'); ?>
 </div>
 
-{{-- ── Scripts ──────────────────────────────────────────────────── --}}
+
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/js/tom-select.complete.min.js"></script>
-@stack('scripts')
+<?php echo $__env->yieldPushContent('scripts'); ?>
 
 <script>
 // ── Page loader ───────────────────────────────────────────────────
@@ -472,4 +473,4 @@ window.initTomSelect = function (container) {
 };
 </script>
 </body>
-</html>
+</html><?php /**PATH D:\Claud AI\new18\mobileshop\resources\views/layouts/app.blade.php ENDPATH**/ ?>

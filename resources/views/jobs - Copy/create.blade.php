@@ -232,8 +232,53 @@
                 </button>
             </div>
 
-            {{-- Customer preview + history --}}
-            @include('jobs._customer_preview', ['selectId' => 'customer_select', 'previewId' => 'customer'])
+            {{-- Customer preview + history (shown when customer selected) --}}
+            <div id="customer-preview" class="mt-3" style="display:none;">
+
+                {{-- Contact info + stats in one clean row --}}
+                <div class="d-flex align-items-center gap-3 p-3 rounded-3" style="background:var(--bs-tertiary-bg);border:1px solid var(--bs-border-color);">
+                    {{-- Avatar --}}
+                    <div id="customer-avatar" style="width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,#0d6efd,#0099ff);display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:800;color:#fff;flex-shrink:0;"></div>
+
+                    {{-- Name + contact --}}
+                    <div class="flex-grow-1 min-width-0">
+                        <div class="fw-bold" id="preview-name" style="font-size:14px;"></div>
+                        <div class="d-flex flex-wrap gap-3 mt-1">
+                            <span id="preview-phone" class="text-secondary" style="font-size:11px;display:none;"><i class="bi bi-telephone me-1"></i><span></span></span>
+                            <span id="preview-email" class="text-secondary" style="font-size:11px;display:none;"><i class="bi bi-envelope me-1"></i><span></span></span>
+                            <span id="preview-address" class="text-secondary" style="font-size:11px;display:none;"><i class="bi bi-geo-alt me-1"></i><span></span></span>
+                        </div>
+                    </div>
+
+                    {{-- Stats + actions on right --}}
+                    <div class="d-flex align-items-center gap-2 flex-shrink-0">
+                        {{-- Loading --}}
+                        <span id="history-loading" style="display:none;">
+                            <span class="spinner-border spinner-border-sm text-secondary"></span>
+                        </span>
+
+                        {{-- Stats (shown after load) --}}
+                        <div id="history-stats" style="display:none;text-align:right;">
+                            <div style="font-size:11px;font-weight:700;font-family:'Syne',sans-serif;" id="stat-spent" class="text-success"></div>
+                            <div style="font-size:10px;" id="stat-due" class="text-danger"></div>
+                            <div style="font-size:10px;color:var(--bs-secondary-color);" id="stat-jobs"></div>
+                        </div>
+
+                        {{-- Jobs link --}}
+                        <a id="view-all-jobs" href="#" target="_blank"
+                            class="btn btn-sm btn-outline-secondary"
+                            style="font-size:11px;display:none;">
+                            Jobs <i class="bi bi-box-arrow-up-right ms-1" style="font-size:9px;"></i>
+                        </a>
+
+                        {{-- Edit button --}}
+                        <button type="button" onclick="openEditCustomerModal()" class="btn btn-sm btn-outline-secondary">
+                            <i class="bi bi-pencil"></i>
+                        </button>
+                    </div>
+                </div>
+
+            </div>
         </div>
     </div>
 
@@ -267,13 +312,10 @@
             <div class="row g-3">
                 <div class="col-sm-4">
                     <label class="form-label">Status</label>
-                    @include('jobs._status_select', ['selected' => old('status','In Progress')])
-                </div>
-                <div class="col-sm-4">
-                    <label class="form-label">📍 Device Location</label>
-                    <select class="form-select no-ts" name="device_location">
-                        <option value="With Us"       {{ old('device_location','With Us')==='With Us'?'selected':'' }}>📦 With Us</option>
-                        <option value="With Customer" {{ old('device_location')==='With Customer'?'selected':'' }}>👤 With Customer</option>
+                    <select class="form-select" name="status">
+                        @foreach(['In Progress','Completed','Waiting Parts','Ready for Collection','Cancelled'] as $s)
+                        <option value="{{ $s }}" {{ old('status','In Progress')===$s?'selected':'' }}>{{ $s }}</option>
+                        @endforeach
                     </select>
                 </div>
                 <div class="col-sm-4">
@@ -423,7 +465,7 @@
             <div class="col-sm-4">
                 <label class="form-label">Status</label>
                 <select name="devices[__DIDX__][repair_status]" class="form-select form-select-sm no-ts">
-                    @foreach(\App\Models\Job::statuses() as $s)
+                    @foreach(['In Progress','Completed','Waiting Parts','Ready for Collection','Cancelled'] as $s)
                     <option value="{{ $s }}" {{ $s==='In Progress'?'selected':'' }}>{{ $s }}</option>
                     @endforeach
                 </select>
@@ -639,7 +681,49 @@
 </div>
 
 {{-- ─────────── ADD / EDIT CUSTOMER MODAL ─────────── --}}
-@include('jobs._customer_modal')
+<div class="modal fade" id="customer-modal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header border-0 pb-0">
+                <h5 class="modal-title fw-bold" id="customer-modal-title">
+                    <i class="bi bi-person-plus me-2 text-success"></i>Add New Customer
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body pt-3">
+                <div id="modal-error" class="alert alert-danger py-2 small" style="display:none;"></div>
+                <div class="row g-3">
+                    <div class="col-12">
+                        <label class="form-label">Full Name *</label>
+                        <input type="text" class="form-control" id="new_name" placeholder="e.g. James Wilson">
+                    </div>
+                    <div class="col-sm-6">
+                        <label class="form-label">Phone</label>
+                        <input type="text" class="form-control" id="new_phone" placeholder="07700 900000">
+                    </div>
+                    <div class="col-sm-6">
+                        <label class="form-label">Email</label>
+                        <input type="email" class="form-control" id="new_email" placeholder="email@example.com">
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label">Address</label>
+                        <input type="text" class="form-control" id="new_address" placeholder="e.g. 12 High Street, London">
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label">Notes</label>
+                        <textarea class="form-control" id="new_notes" rows="2" placeholder="Any notes about this customer..."></textarea>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer border-0 pt-0">
+                <button onclick="saveCustomer()" class="btn btn-success px-4" id="save-customer-btn">
+                    <i class="bi bi-check-lg me-1"></i> <span id="save-customer-lbl">Save Customer</span>
+                </button>
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+            </div>
+        </div>
+    </div>
+</div>
 
 @endsection
 
@@ -688,17 +772,13 @@ function recalc() {
     const dType      = document.getElementById('discount_type').value;
     const dVal       = parseFloat(document.getElementById('discount_value').value)||0;
     const voucherAmt = parseFloat(document.getElementById('voucher_code').dataset.amount||0)||0;
-    const voucherCode= document.getElementById('voucher_code').value || '';
     const payAmt     = parseFloat(document.getElementById('payment_amount').value)||0;
 
     let disc = 0;
     if (dType==='percent') disc = subtotal*dVal/100;
     else if (dType==='fixed') disc = Math.min(dVal,subtotal);
 
-    // Cap voucher deduction to what's available after discount — never go negative
-    const afterDiscBeforeVoucher = Math.max(0, subtotal - disc);
-    const actualVoucherDeduction = Math.min(voucherAmt, afterDiscBeforeVoucher);
-    const afterDisc = Math.max(0, afterDiscBeforeVoucher - actualVoucherDeduction);
+    const afterDisc = Math.max(0, subtotal - disc - voucherAmt);
     const balance   = Math.max(0, afterDisc - payAmt);
 
     document.getElementById('summary-subtotal').textContent = '£'+subtotal.toFixed(2);
@@ -712,21 +792,12 @@ function recalc() {
         document.getElementById('val-discount').textContent = '-£'+disc.toFixed(2);
     } else { rowDisc.style.display='none'; }
 
-    // Voucher row — show whenever a voucher is applied, even if subtotal is £0
+    // Voucher row
     const rowVouch = document.getElementById('row-voucher');
-    if (voucherAmt > 0 && voucherCode) {
+    if (voucherAmt > 0) {
         rowVouch.style.display='flex';
-        const lbl = document.getElementById('lbl-voucher');
-        const val = document.getElementById('val-voucher');
-        lbl.textContent = '🎟️ ' + voucherCode;
-        if (subtotal === 0) {
-            // Voucher applied but no price yet — show as pending
-            val.textContent = '-£' + voucherAmt.toFixed(2) + ' (pending)';
-            val.style.opacity = '0.6';
-        } else {
-            val.textContent = '-£' + actualVoucherDeduction.toFixed(2);
-            val.style.opacity = '1';
-        }
+        document.getElementById('lbl-voucher').textContent = '🎟️ '+(document.getElementById('voucher_code').value||'Voucher');
+        document.getElementById('val-voucher').textContent = '-£'+voucherAmt.toFixed(2);
     } else { rowVouch.style.display='none'; }
 
     // Payment row
@@ -739,12 +810,11 @@ function recalc() {
     } else { rowPay.style.display='none'; }
 
     // Balance box
-    const bb    = document.getElementById('balance-box');
+    const bb = document.getElementById('balance-box');
     const balEl = document.getElementById('summary-balance');
-    if (balance <= 0 && (disc>0 || voucherAmt>0 || payAmt>0 || subtotal===0)) {
+    if (balance <= 0 && (disc>0||voucherAmt>0||payAmt>0||subtotal===0)) {
         bb.style.background='rgba(25,135,84,.1)'; bb.style.border='2px solid rgba(25,135,84,.3)';
-        balEl.className='fw-bold text-success';
-        balEl.textContent = (subtotal === 0 && voucherAmt > 0) ? '🎟️ Voucher Applied' : '✅ Paid';
+        balEl.className='fw-bold text-success'; balEl.textContent='✅ Paid';
     } else {
         bb.style.background='var(--bs-tertiary-bg)'; bb.style.border='none';
         balEl.className='fw-bold text-danger'; balEl.textContent='£'+balance.toFixed(2);
@@ -1035,27 +1105,254 @@ function applyDiscountAndClose() {
 // ── Customer select → show preview strip ─────────────────────────
 function onCustomerChange(sel, overrideData) {
     const id = sel.value || (sel.tomselect ? sel.tomselect.getValue() : '') || overrideData?.id || '';
+
     setCurrentCustomer(id);
-    if (!id && !overrideData) { updateCustomerPreview(null, {}, 'customer'); return; }
+
+    if (!id && !overrideData) {
+        document.getElementById('customer-preview').style.display = 'none';
+        return;
+    }
+
+    // Basic info from option data
     const opt     = sel.querySelector(`option[value="${id}"]`);
     const name    = overrideData?.name    || (opt?.text || '').split(' · ')[0].trim();
     const phone   = overrideData?.phone   ?? opt?.dataset.phone   ?? '';
     const email   = overrideData?.email   ?? opt?.dataset.email   ?? '';
     const address = overrideData?.address ?? opt?.dataset.address ?? '';
-    // Use shared updateCustomerPreview from _customer_js partial
-    updateCustomerPreview(id, { name, phone, email, address }, 'customer');
+
+    document.getElementById('customer-avatar').textContent = (name || '?').charAt(0).toUpperCase();
+    document.getElementById('preview-name').textContent    = name;
+
+    const phEl = document.getElementById('preview-phone');
+    phEl.querySelector('span').textContent = phone;
+    phEl.style.display = phone ? '' : 'none';
+
+    const emEl = document.getElementById('preview-email');
+    emEl.querySelector('span').textContent = email;
+    emEl.style.display = email ? '' : 'none';
+
+    const adEl = document.getElementById('preview-address');
+    adEl.querySelector('span').textContent = address;
+    adEl.style.display = address ? '' : 'none';
+
+    document.getElementById('customer-preview').style.display = 'block';
+
+    // Fetch job history
+    if (id) { loadCustomerHistory(id); }
 }
 
-// ── Customer modal helpers — from shared partial ──────────────────
-// saveCustomer(), openCustomerModal(), openEditCustomerModal(),
-// loadCustomerHistory(), updateCustomerPreview() are all in _customer_js partial
+function loadCustomerHistory(customerId) {
+    var statsEl   = document.getElementById('history-stats');
+    var loadingEl = document.getElementById('history-loading');
+    var jobsLink  = document.getElementById('view-all-jobs');
+    statsEl.style.display   = 'none';
+    jobsLink.style.display  = 'none';
+    loadingEl.style.display = 'inline-block';
 
-// Wire up the shared partial's onCustomerSelected callback
-window.onCustomerSelected = function(id, customer) {
-    var sel = document.getElementById('customer_select');
-    if (sel) setCurrentCustomer(id);
-    updateCustomerPreview(id, customer, 'customer');
-};
+    fetch('/customers/' + customerId + '/json', {
+        headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+        loadingEl.style.display = 'none';
+
+        // Spent
+        document.getElementById('stat-spent').textContent = '£' + data.total_spent + ' spent';
+
+        // Due — show under spent even if 0
+        var dueEl = document.getElementById('stat-due');
+        var due   = parseFloat(data.total_due) || 0;
+        dueEl.textContent   = due > 0 ? '£' + data.total_due + ' outstanding' : 'No balance due';
+        dueEl.style.display = '';
+
+        // Jobs count — hidden, shown on button
+        document.getElementById('stat-jobs').textContent = '';
+
+        // Jobs link — show job count on button
+        jobsLink.href          = '/customers/' + customerId;
+        jobsLink.innerHTML     = data.job_count + ' Job' + (data.job_count !== 1 ? 's' : '') + ' <i class="bi bi-box-arrow-up-right ms-1" style="font-size:9px;"></i>';
+        jobsLink.style.display = '';
+
+        statsEl.style.display = 'block';
+    })
+    .catch(function() {
+        loadingEl.style.display = 'none';
+    });
+}
+
+// ── Customer modal helpers ────────────────────────────────────────
+let customerModalMode = 'add';
+let editingCustomerId = null;
+
+function getCustomerModal() {
+    // Always use getOrCreateInstance so we never double-initialise
+    return bootstrap.Modal.getOrCreateInstance(document.getElementById('customer-modal'));
+}
+
+function resetCustomerModal() {
+    document.getElementById('modal-error').style.display = 'none';
+    ['new_name','new_phone','new_email','new_address','new_notes']
+        .forEach(id => { const el = document.getElementById(id); if(el) el.value = ''; });
+}
+
+// ── Add mode ──────────────────────────────────────────────────────
+function openCustomerModal() {
+    customerModalMode = 'add';
+    editingCustomerId = null;
+
+    document.getElementById('customer-modal-title').innerHTML =
+        '<i class="bi bi-person-plus me-2 text-success"></i>Add New Customer';
+    document.getElementById('save-customer-lbl').textContent = 'Save Customer';
+    document.getElementById('save-customer-btn').className   = 'btn btn-success px-4';
+    resetCustomerModal();
+
+    getCustomerModal().show();
+    setTimeout(() => document.getElementById('new_name').focus(), 400);
+}
+
+// ── Edit mode ─────────────────────────────────────────────────────
+async function openEditCustomerModal() {
+    const sel = document.getElementById('customer_select');
+    const id  = sel.value;
+    if (!id) return;
+
+    customerModalMode = 'edit';
+    editingCustomerId = id;
+
+    document.getElementById('customer-modal-title').innerHTML =
+        '<i class="bi bi-pencil me-2 text-primary"></i>Edit Customer';
+    document.getElementById('save-customer-lbl').textContent = 'Update Customer';
+    document.getElementById('save-customer-btn').className   = 'btn btn-primary px-4';
+    resetCustomerModal();
+
+    // Pre-fill instantly from <option> data attributes
+    const opt     = sel.options[sel.selectedIndex];
+    const name    = (opt?.text || '').split(' · ')[0].trim();
+    const phone   = opt?.dataset.phone   || '';
+    const email   = opt?.dataset.email   || '';
+    const address = opt?.dataset.address || '';
+    const notes   = opt?.dataset.notes   || '';
+
+    document.getElementById('new_name').value    = name;
+    document.getElementById('new_phone').value   = phone;
+    document.getElementById('new_email').value   = email;
+    document.getElementById('new_address').value = address;
+    document.getElementById('new_notes').value   = notes;
+
+    getCustomerModal().show();
+
+    // Background fetch — gets authoritative server data (more accurate than option attributes)
+    try {
+        const res = await fetch(`/customers/${id}/json`, {
+            headers: {'Accept':'application/json','X-CSRF-TOKEN':'{{ csrf_token() }}'}
+        });
+        if (res.ok) {
+            const c = await res.json();
+            document.getElementById('new_name').value    = c.name    || name;
+            document.getElementById('new_phone').value   = c.phone   || phone;
+            document.getElementById('new_email').value   = c.email   || email;
+            document.getElementById('new_address').value = c.address || address;
+            document.getElementById('new_notes').value   = c.notes   || '';
+        }
+    } catch(e) { /* option data already shown — silently ignore */ }
+}
+
+// ── Save (Add or Edit) ────────────────────────────────────────────
+async function saveCustomer() {
+    const name    = document.getElementById('new_name').value.trim();
+    const phone   = document.getElementById('new_phone').value.trim();
+    const email   = document.getElementById('new_email').value.trim();
+    const address = document.getElementById('new_address').value.trim();
+    const notes   = document.getElementById('new_notes').value.trim();
+    const errEl   = document.getElementById('modal-error');
+    const btn     = document.getElementById('save-customer-btn');
+
+    if (!name) {
+        errEl.textContent = 'Name is required.';
+        errEl.style.display = 'block';
+        return;
+    }
+
+    const isEdit = customerModalMode === 'edit';
+    const url    = isEdit ? `/customers/${editingCustomerId}` : '{{ route("customers.store") }}';
+
+    const lblSpan = btn.querySelector('#save-customer-lbl') || btn.querySelector('span:last-child');
+    if (lblSpan) lblSpan.textContent = 'Saving...';
+    btn.disabled = true;
+    errEl.style.display = 'none';
+
+    try {
+        const res  = await fetch(url, {
+            method:  isEdit ? 'PUT' : 'POST',
+            headers: {'Content-Type':'application/json','X-CSRF-TOKEN':'{{ csrf_token() }}','Accept':'application/json'},
+            body:    JSON.stringify({name, phone, email, address, notes})
+        });
+        const data = await res.json();
+
+        if (data.success || (isEdit && res.ok)) {
+            const customer = data.customer || {id: editingCustomerId, name, phone, email, address};
+            const label    = customer.name + (customer.phone ? ' · ' + customer.phone : '');
+            const sel      = document.getElementById('customer_select');
+
+            if (isEdit) {
+                // Update the <option> text and data attributes
+                const existingOpt = sel.querySelector(`option[value="${customer.id}"]`);
+                if (existingOpt) {
+                    existingOpt.text            = label;
+                    existingOpt.dataset.phone   = customer.phone   || '';
+                    existingOpt.dataset.email   = customer.email   || '';
+                    existingOpt.dataset.address = customer.address || '';
+                    existingOpt.dataset.notes   = notes;
+                }
+                // Update Tom Select display if active
+                if (sel.tomselect) {
+                    sel.tomselect.updateOption(String(customer.id), {value: String(customer.id), text: label});
+                    sel.tomselect.refreshOptions(false);
+                    sel.tomselect.setValue(String(customer.id), true);
+                }
+            } else {
+                // Add brand-new option
+                const newOpt            = new Option(label, customer.id, true, true);
+                newOpt.dataset.phone   = customer.phone   || '';
+                newOpt.dataset.email   = customer.email   || '';
+                newOpt.dataset.address = customer.address || '';
+                newOpt.dataset.notes   = notes;
+                sel.appendChild(newOpt);
+
+                if (sel.tomselect) {
+                    sel.tomselect.addOption({value: String(customer.id), text: label});
+                    sel.tomselect.setValue(String(customer.id));
+                } else {
+                    sel.value = String(customer.id);
+                }
+            }
+
+            // Refresh preview strip with fresh data directly
+            onCustomerChange(sel, {
+                id:      String(customer.id),
+                name:    customer.name,
+                phone:   customer.phone   || '',
+                email:   customer.email   || '',
+                address: customer.address || ''
+            });
+
+            // Hide modal properly
+            getCustomerModal().hide();
+        } else {
+            errEl.textContent = Object.values(data.errors || {}).flat().join(' ') || data.message || 'Error saving.';
+            errEl.style.display = 'block';
+        }
+    } catch(e) {
+        errEl.textContent = 'Network error. Please try again.';
+        errEl.style.display = 'block';
+    }
+
+    btn.querySelector('#save-customer-lbl, span').textContent = isEdit ? 'Update Customer' : 'Save Customer';
+    btn.disabled = false;
+}
+
+// Alias kept for any old references
+function saveNewCustomer() { saveCustomer(); }
 
 // ── Validation ────────────────────────────────────────────────────
 function setFieldError(el, msg) {
@@ -1282,8 +1579,4 @@ document.addEventListener('DOMContentLoaded', () => {
 
 addDevice();
 </script>
-
-{{-- Shared customer modal JS (saveCustomer, openCustomerModal, loadCustomerHistory etc.) --}}
-@include('jobs._customer_js')
-
 @endpush

@@ -11,6 +11,7 @@ class Kernel extends HttpKernel
         \Illuminate\Foundation\Http\Middleware\ValidatePostSize::class,
         \Illuminate\Foundation\Http\Middleware\TrimStrings::class,
         \Illuminate\Foundation\Http\Middleware\ConvertEmptyStringsToNull::class,
+
     ];
 
     protected $middlewareGroups = [
@@ -32,6 +33,7 @@ class Kernel extends HttpKernel
         'auth'             => \App\Http\Middleware\Authenticate::class,
         'auth.basic'       => \Illuminate\Auth\Middleware\AuthenticateWithBasicAuth::class,
         'auth.session'     => \Illuminate\Session\Middleware\AuthenticateSession::class,
+        'permission' => \App\Http\Middleware\CheckPermission::class,
         'cache.headers'    => \Illuminate\Http\Middleware\SetCacheHeaders::class,
         'can'              => \Illuminate\Auth\Middleware\Authorize::class,
         'guest'            => \Illuminate\Auth\Middleware\RedirectIfAuthenticated::class,

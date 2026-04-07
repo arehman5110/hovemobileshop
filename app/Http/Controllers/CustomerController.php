@@ -28,10 +28,11 @@ class CustomerController extends Controller
 
     public function show(Customer $customer)
     {
-        $jobs       = $customer->jobs()->with(['devices.repairItems.repairType', 'payments'])->latest()->get();
-        $myVouchers = Voucher::where('customer_id', $customer->id)->get();
-        $deals      = PhoneDeal::where('customer_id', $customer->id)->latest('deal_date')->get();
-        return view('customers.show', compact('customer', 'jobs', 'myVouchers', 'deals'));
+        $jobs         = $customer->jobs()->with(['devices.repairItems.repairType', 'payments'])->latest()->get();
+        $myVouchers   = Voucher::where('customer_id', $customer->id)->get();
+        $deals        = PhoneDeal::where('customer_id', $customer->id)->latest('deal_date')->get();
+        $pendingDeals = $deals->filter(fn($d) => $d->balanceDue() > 0);
+        return view('customers.show', compact('customer', 'jobs', 'myVouchers', 'deals', 'pendingDeals'));
     }
 
     public function create()
@@ -62,16 +63,38 @@ class CustomerController extends Controller
         return view('customers.edit', compact('customer'));
     }
 
-    // JSON endpoint for AJAX fetching customer details
+    // JSON endpoint for AJAX fetching customer details + job history
     public function json(Customer $customer)
     {
+        $jobs        = $customer->jobs()->with('payments')->latest()->get();
+        $totalSpent  = $jobs->sum(fn($j) => $j->totalAfterDiscount());
+        $totalPaid   = $jobs->sum(fn($j) => $j->totalPaid());
+        $totalDue    = $jobs->sum(fn($j) => $j->balanceDue());
+        $jobCount    = $jobs->count();
+        $activeJobs  = $jobs->whereIn('status', ['In Progress', 'Waiting Parts', 'Ready for Collection'])->count();
+
+        $recentJobs = $jobs->take(5)->map(fn($j) => [
+            'id'     => $j->id,
+            'status' => $j->status,
+            'date'   => $j->date_in->format('d M Y'),
+            'total'  => number_format($j->totalAfterDiscount(), 2),
+            'paid'   => $j->isPaidInFull(),
+            'device' => $j->devices->first()?->name ?? '—',
+        ]);
+
         return response()->json([
-            'id'      => $customer->id,
-            'name'    => $customer->name,
-            'phone'   => $customer->phone,
-            'email'   => $customer->email,
-            'address' => $customer->address,
-            'notes'   => $customer->notes,
+            'id'         => $customer->id,
+            'name'       => $customer->name,
+            'phone'      => $customer->phone,
+            'email'      => $customer->email,
+            'address'    => $customer->address,
+            'notes'      => $customer->notes,
+            'job_count'  => $jobCount,
+            'active_jobs'=> $activeJobs,
+            'total_spent'=> number_format($totalSpent, 2),
+            'total_paid' => number_format($totalPaid, 2),
+            'total_due'  => number_format($totalDue, 2),
+            'recent_jobs'=> $recentJobs,
         ]);
     }
 

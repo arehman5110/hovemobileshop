@@ -25,10 +25,14 @@
 .status-pill { padding:6px 14px;border-radius:20px;font-size:12px;font-weight:600;border:2px solid transparent;cursor:pointer;transition:all .15s;background:transparent; }
 .status-pill:hover { opacity:.85;transform:translateY(-1px); }
 .status-pill.active-status { color:#fff !important; }
-@php foreach(\App\Helpers\JobStatus::STATUSES as $s => $cfg): @endphp
-.status-pill[data-status="{{ $s }}"] { border-color:{{ $cfg['color'] }};color:{{ $cfg['color'] }}; }
-.status-pill[data-status="{{ $s }}"].active-status { background:{{ $cfg['color'] }};color:#fff; }
-@php endforeach; @endphp
+.status-pill[data-status="In Progress"]    { border-color:#0d6efd;color:#0d6efd; }
+.status-pill[data-status="In Progress"].active-status    { background:#0d6efd; }
+.status-pill[data-status="Completed"]      { border-color:#198754;color:#198754; }
+.status-pill[data-status="Completed"].active-status      { background:#198754; }
+.status-pill[data-status="Waiting Parts"] { border-color:#ffc107;color:#856404; }
+.status-pill[data-status="Waiting Parts"].active-status  { background:#ffc107;color:#856404 !important; }
+.status-pill[data-status="Cancelled"]     { border-color:#6c757d;color:#6c757d; }
+.status-pill[data-status="Cancelled"].active-status     { background:#6c757d; }
 /* Pay method pills */
 .pay-pill { flex:1;text-align:center;padding:10px 6px;border:2px solid var(--bs-border-color);border-radius:10px;cursor:pointer;transition:all .15s;user-select:none; }
 .pay-pill.active { border-color:#198754;background:rgba(25,135,84,.1);color:#198754; }
@@ -56,14 +60,11 @@
         <div class="text-secondary small">{{ $job->customer->name }} · {{ $job->date_in->format('d M Y') }}</div>
         {{-- Status pills --}}
         <div class="d-flex gap-2 mt-2 flex-wrap">
-            @foreach(\App\Models\Job::statuses() as $s)
-            @php $cfg = \App\Helpers\JobStatus::config($s); @endphp
+            @foreach(['In Progress','Completed','Waiting Parts','Ready for Collection','Cancelled'] as $s)
             <form method="POST" action="{{ route('jobs.update-status',$job) }}" class="d-inline">
                 @csrf @method('PATCH')
                 <input type="hidden" name="status" value="{{ $s }}">
-                <button type="submit" class="status-pill {{ $job->status===$s?'active-status':'' }}" data-status="{{ $s }}">
-                    {{ $cfg['icon'] }} {{ $s }}
-                </button>
+                <button type="submit" class="status-pill {{ $job->status===$s?'active-status':'' }}" data-status="{{ $s }}">{{ $s }}</button>
             </form>
             @endforeach
         </div>
@@ -95,13 +96,6 @@
                     </div>
                 </div>
                 @if($job->date_out)<div class="text-secondary small flex-shrink-0">Due: {{ $job->date_out->format('d M Y') }}</div>@endif
-                <div class="flex-shrink-0">
-                    @if(($job->device_location ?? 'With Us') === 'With Us')
-                    <span class="badge bg-primary rounded-pill" style="font-size:11px;">📦 With Us</span>
-                    @else
-                    <span class="badge bg-warning text-dark rounded-pill" style="font-size:11px;">👤 With Customer</span>
-                    @endif
-                </div>
             </div>
             @if($job->notes)<div class="mt-3 pt-3 border-top small text-secondary"><i class="bi bi-sticky me-1"></i>{{ $job->notes }}</div>@endif
         </div>
@@ -117,7 +111,10 @@
             @foreach($job->devices as $device)
             @php
                 $deviceStatus = $device->repairItems->first()?->status ?? 'In Progress';
-                $statusColor  = \App\Helpers\JobStatus::config($deviceStatus)['color'];
+                $statusColor  = match($deviceStatus){
+                    'Completed'    =>'#198754','In Progress'=>'#0d6efd',
+                    'Waiting Parts'=>'#856404','Cancelled'  =>'#6c757d','Ready for Collection'=>'#087990',default=>'#6c757d'
+                };
             @endphp
             <div class="device-repair-card">
                 <div class="device-repair-header">
@@ -142,14 +139,15 @@
                                 {{ $deviceStatus }}
                             </button>
                             <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0" style="min-width:160px;border-radius:12px;overflow:hidden;font-size:13px;">
-                                @foreach(\App\Models\Job::statuses() as $s)
+                                @foreach(['In Progress','Completed','Waiting Parts','Ready for Collection','Cancelled'] as $s)
                                 @if($s !== $deviceStatus)
                                 <li>
                                     <form method="POST" action="{{ route('devices.update-status', $device) }}">
                                         @csrf @method('PATCH')
                                         <input type="hidden" name="status" value="{{ $s }}">
                                         <button type="submit" class="dropdown-item" style="padding:8px 16px;">
-                                            {{ \App\Helpers\JobStatus::config($s)['icon'] }} {{ $s }}
+                                            @php $ic=match($s){'Completed'=>'✅','In Progress'=>'🔵','Waiting Parts'=>'⏳','Cancelled'=>'❌','Ready for Collection'=>'📦',default=>''}; @endphp
+                                            {{ $ic }} {{ $s }}
                                         </button>
                                     </form>
                                 </li>
