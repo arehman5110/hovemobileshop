@@ -55,14 +55,17 @@ class PartController extends Controller
     public function store(Request $request)
     {
         $data = $request->validate([
-            'category_id' => 'required|exists:categories,id',
-            'name'        => 'required|string|max:150',
-            'part_type'   => 'required|string|max:50',
-            'quality'     => 'required|in:Original,Compatible,Refurbished,Good Used',
-            'stock'       => 'required|integer|min:0',
-            'cost_price'  => 'nullable|numeric|min:0',
-            'sell_price'  => 'nullable|numeric|min:0',
-            'notes'       => 'nullable|string',
+            'category_id'    => 'required|exists:categories,id',
+            'name'           => 'required|string|max:150',
+            'part_type'      => 'required|string|max:50',
+            'usage_type'     => 'required|in:repair,accessory,both',
+            'brand'          => 'nullable|string|max:100',
+            'compatible_with'=> 'nullable|string|max:150',
+            'quality'        => 'required|in:Original,Compatible,Refurbished,Good Used',
+            'stock'          => 'required|integer|min:0',
+            'cost_price'     => 'nullable|numeric|min:0',
+            'sell_price'     => 'nullable|numeric|min:0',
+            'notes'          => 'nullable|string',
         ]);
         Part::create($data);
         return redirect()->route('parts.index')->with('success', 'Part added to stock!');
@@ -78,14 +81,17 @@ class PartController extends Controller
     public function update(Request $request, Part $part)
     {
         $data = $request->validate([
-            'category_id' => 'required|exists:categories,id',
-            'name'        => 'required|string|max:150',
-            'part_type'   => 'required|string|max:50',
-            'quality'     => 'required|in:Original,Compatible,Refurbished,Good Used',
-            'stock'       => 'required|integer|min:0',
-            'cost_price'  => 'nullable|numeric|min:0',
-            'sell_price'  => 'nullable|numeric|min:0',
-            'notes'       => 'nullable|string',
+            'category_id'    => 'required|exists:categories,id',
+            'name'           => 'required|string|max:150',
+            'part_type'      => 'required|string|max:50',
+            'usage_type'     => 'required|in:repair,accessory,both',
+            'brand'          => 'nullable|string|max:100',
+            'compatible_with'=> 'nullable|string|max:150',
+            'quality'        => 'required|in:Original,Compatible,Refurbished,Good Used',
+            'stock'          => 'required|integer|min:0',
+            'cost_price'     => 'nullable|numeric|min:0',
+            'sell_price'     => 'nullable|numeric|min:0',
+            'notes'          => 'nullable|string',
         ]);
         $part->update($data);
         return redirect()->route('parts.index')->with('success', 'Part updated!');

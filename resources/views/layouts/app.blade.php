@@ -203,6 +203,11 @@
         <a href="{{ route('dashboard') }}" class="nav-link {{ request()->routeIs('dashboard') ? 'active' : '' }}">
             <span class="nav-icon">🏠</span> Dashboard
         </a>
+        @if($u->hasPermission('jobs.view'))
+        <a href="{{ route('pos.terminal') }}" class="nav-link {{ request()->routeIs('pos.*') ? 'active' : '' }}">
+            <span class="nav-icon">🛒</span> POS
+        </a>
+        @endif
 
         @if($u->hasPermission('parts.view'))
         <div class="nav-section-label mt-1">Stock</div>
@@ -220,6 +225,9 @@
         @if($u->hasPermission('repair-types.manage'))
         <a href="{{ route('repair-types.index') }}" class="nav-link {{ request()->routeIs('repair-types.*') ? 'active' : '' }}">
             <span class="nav-icon">🔩</span> Repair Types
+        </a>
+        <a href="{{ route('catalogue.index') }}" class="nav-link {{ request()->routeIs('catalogue.*') ? 'active' : '' }}">
+            <span class="nav-icon">📋</span> Catalogue
         </a>
         @endif
         @if($u->hasPermission('customers.view'))

@@ -42,6 +42,11 @@ class UserRole
         // Dashboard
         'dashboard.view'        => ['admin','manager','technician','viewer'],
 
+        // POS
+        'pos.use'               => ['admin','manager','technician'],
+        'pos.history'           => ['admin','manager'],
+        'pos.void'              => ['admin','manager'],
+
         // Jobs
         'jobs.view'             => ['admin','manager','technician','viewer'],
         'jobs.create'           => ['admin','manager','technician'],

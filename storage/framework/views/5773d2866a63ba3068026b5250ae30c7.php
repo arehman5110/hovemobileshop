@@ -203,6 +203,11 @@
         <a href="<?php echo e(route('dashboard')); ?>" class="nav-link <?php echo e(request()->routeIs('dashboard') ? 'active' : ''); ?>">
             <span class="nav-icon">🏠</span> Dashboard
         </a>
+        <?php if($u->hasPermission('jobs.view')): ?>
+        <a href="<?php echo e(route('pos.terminal')); ?>" class="nav-link <?php echo e(request()->routeIs('pos.*') ? 'active' : ''); ?>">
+            <span class="nav-icon">🛒</span> POS
+        </a>
+        <?php endif; ?>
 
         <?php if($u->hasPermission('parts.view')): ?>
         <div class="nav-section-label mt-1">Stock</div>
@@ -220,6 +225,9 @@
         <?php if($u->hasPermission('repair-types.manage')): ?>
         <a href="<?php echo e(route('repair-types.index')); ?>" class="nav-link <?php echo e(request()->routeIs('repair-types.*') ? 'active' : ''); ?>">
             <span class="nav-icon">🔩</span> Repair Types
+        </a>
+        <a href="<?php echo e(route('catalogue.index')); ?>" class="nav-link <?php echo e(request()->routeIs('catalogue.*') ? 'active' : ''); ?>">
+            <span class="nav-icon">📋</span> Catalogue
         </a>
         <?php endif; ?>
         <?php if($u->hasPermission('customers.view')): ?>

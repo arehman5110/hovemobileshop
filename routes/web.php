@@ -22,7 +22,36 @@ Route::post('logout', [AuthController::class, 'logout'])->name('logout')->middle
 // ── Password change ───────────────────────────────────────────────
 Route::post('password/change', [AuthController::class, 'changePassword'])->name('password.change')->middleware('auth');
 
-// ── Dashboard ─────────────────────────────────────────────────────
+// ── POS Terminal ──────────────────────────────────────────────────
+Route::get('pos',                       [App\Http\Controllers\PosController::class, 'terminal'])->name('pos.terminal');
+Route::post('pos',                      [App\Http\Controllers\PosController::class, 'store'])->name('pos.store');
+Route::get('pos/history',               [App\Http\Controllers\PosController::class, 'index'])->name('pos.index');
+Route::get('pos/{sale}/receipt',        [App\Http\Controllers\PosController::class, 'receipt'])->name('pos.receipt');
+Route::delete('pos/{sale}',             [App\Http\Controllers\PosController::class, 'destroy'])->name('pos.destroy');
+
+// POS API (for terminal AJAX)
+Route::get('pos/api/categories',                                [App\Http\Controllers\PosController::class, 'apiCategories'])->name('pos.api.categories');
+Route::get('pos/api/categories/{category}/brands',              [App\Http\Controllers\PosController::class, 'apiBrands'])->name('pos.api.brands');
+Route::get('pos/api/categories/{category}/models',              [App\Http\Controllers\PosController::class, 'apiModels'])->name('pos.api.models');
+Route::get('pos/api/categories/{category}/products',            [App\Http\Controllers\PosController::class, 'apiProducts'])->name('pos.api.products');
+Route::get('pos/api/search',                                    [App\Http\Controllers\PosController::class, 'apiSearch'])->name('pos.api.search');
+
+// POS Stock Management
+Route::get('pos/stock',                 [App\Http\Controllers\PosController::class, 'stockIndex'])->name('pos.stock');
+Route::post('pos/stock',                [App\Http\Controllers\PosController::class, 'stockStore'])->name('pos.stock.store');
+Route::put('pos/stock/{item}',          [App\Http\Controllers\PosController::class, 'stockUpdate'])->name('pos.stock.update');
+Route::post('pos/stock/{item}/topup',   [App\Http\Controllers\PosController::class, 'stockTopup'])->name('pos.stock.topup');
+Route::delete('pos/stock/{item}',       [App\Http\Controllers\PosController::class, 'stockDestroy'])->name('pos.stock.destroy');
+
+// POS Setup (Categories / Brands / Models)
+Route::get('pos/setup',                 [App\Http\Controllers\PosController::class, 'setupIndex'])->name('pos.setup');
+Route::post('pos/categories',           [App\Http\Controllers\PosController::class, 'categoryStore'])->name('pos.category.store');
+Route::put('pos/categories/{category}', [App\Http\Controllers\PosController::class, 'categoryUpdate'])->name('pos.category.update');
+Route::delete('pos/categories/{category}',[App\Http\Controllers\PosController::class, 'categoryDestroy'])->name('pos.category.destroy');
+Route::post('pos/brands',               [App\Http\Controllers\PosController::class, 'brandStore'])->name('pos.brand.store');
+Route::delete('pos/brands/{brand}',     [App\Http\Controllers\PosController::class, 'brandDestroy'])->name('pos.brand.destroy');
+Route::post('pos/models',               [App\Http\Controllers\PosController::class, 'modelStore'])->name('pos.model.store');
+Route::delete('pos/models/{model}',     [App\Http\Controllers\PosController::class, 'modelDestroy'])->name('pos.model.destroy');
 Route::get('/', [DashboardController::class, 'index'])
     ->name('dashboard')
     ->middleware('permission:dashboard.view');
@@ -115,7 +144,19 @@ Route::middleware('permission:repair-types.manage')->group(function () {
     Route::resource('device-categories',  App\Http\Controllers\DeviceCategoryController::class)->except(['show','create','edit']);
 });
 
-// ── Inventory ─────────────────────────────────────────────────────
+// ── Catalogue (Product Types + Phone Models) ──────────────────────
+Route::middleware('permission:repair-types.manage')->group(function () {
+    Route::get('catalogue',                                     [App\Http\Controllers\CatalogueController::class, 'index'])->name('catalogue.index');
+    Route::post('catalogue/types',                             [App\Http\Controllers\CatalogueController::class, 'storeType'])->name('catalogue.types.store');
+    Route::put('catalogue/types/{type}',                       [App\Http\Controllers\CatalogueController::class, 'updateType'])->name('catalogue.types.update');
+    Route::delete('catalogue/types/{type}',                    [App\Http\Controllers\CatalogueController::class, 'destroyType'])->name('catalogue.types.destroy');
+    Route::post('catalogue/models',                            [App\Http\Controllers\CatalogueController::class, 'storeModel'])->name('catalogue.models.store');
+    Route::put('catalogue/models/{model}',                     [App\Http\Controllers\CatalogueController::class, 'updateModel'])->name('catalogue.models.update');
+    Route::delete('catalogue/models/{model}',                  [App\Http\Controllers\CatalogueController::class, 'destroyModel'])->name('catalogue.models.destroy');
+});
+Route::get('catalogue/types/json',  [App\Http\Controllers\CatalogueController::class, 'typesJson'])->name('catalogue.types.json');
+Route::get('catalogue/models/json', [App\Http\Controllers\CatalogueController::class, 'modelsJson'])->name('catalogue.models.json');
+Route::get('catalogue/brands/json', [App\Http\Controllers\CatalogueController::class, 'brandsJson'])->name('catalogue.brands.json');
 Route::middleware('permission:phone-deals.view')->group(function () {
     Route::resource('inventory', App\Http\Controllers\InventoryController::class);
 });

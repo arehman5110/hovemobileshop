@@ -1,7 +1,6 @@
-@extends('layouts.app')
-@section('title','Categories')
+<?php $__env->startSection('title','Categories'); ?>
 
-@push('styles')
+<?php $__env->startPush('styles'); ?>
 <style>
 /* ── Layout ── */
 .page-grid { display:grid;grid-template-columns:1fr 380px;gap:20px;align-items:start; }
@@ -36,9 +35,9 @@
 /* ── Form card ── */
 .form-section { font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;opacity:.5;margin-bottom:10px; }
 </style>
-@endpush
+<?php $__env->stopPush(); ?>
 
-@section('content')
+<?php $__env->startSection('content'); ?>
 
 <div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-2">
     <div>
@@ -47,16 +46,17 @@
     </div>
     <div class="d-flex gap-2">
         <span class="badge bg-primary rounded-pill px-3 py-2" style="font-size:12px;">
-            {{ $categories->count() }} categor{{ $categories->count() === 1 ? 'y' : 'ies' }}
+            <?php echo e($categories->count()); ?> categor<?php echo e($categories->count() === 1 ? 'y' : 'ies'); ?>
+
         </span>
     </div>
 </div>
 
 <div class="page-grid">
 
-    {{-- ── Left: Categories list ── --}}
+    
     <div>
-        {{-- Search bar --}}
+        
         <div class="mb-3 position-relative">
             <span style="position:absolute;left:14px;top:50%;transform:translateY(-50%);opacity:.4;font-size:15px;">🔍</span>
             <input type="text" id="cat-search" class="form-control ps-5" placeholder="Search categories..."
@@ -64,50 +64,51 @@
         </div>
 
         <div class="pro-card overflow-hidden" id="cat-list">
-            @forelse($categories as $cat)
-            @php $partCount = $cat->parts()->count(); @endphp
-            <div class="cat-row" id="cat-row-{{ $cat->id }}" data-name="{{ strtolower($cat->name) }}">
-                {{-- Icon --}}
-                <div class="cat-icon-bubble">{{ $cat->icon ?? '🏷️' }}</div>
+            <?php $__empty_1 = true; $__currentLoopData = $categories; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $cat): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
+            <?php $partCount = $cat->parts()->count(); ?>
+            <div class="cat-row" id="cat-row-<?php echo e($cat->id); ?>" data-name="<?php echo e(strtolower($cat->name)); ?>">
+                
+                <div class="cat-icon-bubble"><?php echo e($cat->icon ?? '🏷️'); ?></div>
 
-                {{-- Name & meta --}}
+                
                 <div class="flex-grow-1 min-width-0">
-                    <div class="cat-name">{{ $cat->name }}</div>
+                    <div class="cat-name"><?php echo e($cat->name); ?></div>
                     <div class="cat-count">
-                        {{ $partCount }} part{{ $partCount !== 1 ? 's' : '' }}
-                        @if($partCount > 0)
-                        · <a href="{{ route('parts.index', ['category' => $cat->id]) }}" class="text-decoration-none text-secondary small">View</a>
-                        @endif
+                        <?php echo e($partCount); ?> part<?php echo e($partCount !== 1 ? 's' : ''); ?>
+
+                        <?php if($partCount > 0): ?>
+                        · <a href="<?php echo e(route('parts.index', ['category' => $cat->id])); ?>" class="text-decoration-none text-secondary small">View</a>
+                        <?php endif; ?>
                     </div>
                 </div>
 
-                {{-- Actions --}}
+                
                 <div class="cat-actions">
-                    <button class="btn btn-sm btn-outline-primary" onclick="openEdit({{ $cat->id }},'{{ addslashes($cat->name) }}','{{ $cat->icon ?? '' }}')" title="Edit">
+                    <button class="btn btn-sm btn-outline-primary" onclick="openEdit(<?php echo e($cat->id); ?>,'<?php echo e(addslashes($cat->name)); ?>','<?php echo e($cat->icon ?? ''); ?>')" title="Edit">
                         <i class="bi bi-pencil"></i>
                     </button>
-                    @if($partCount === 0)
-                    <form method="POST" action="{{ route('categories.destroy',$cat) }}" class="d-inline"
-                        onsubmit="return confirm('Delete {{ $cat->name }}?')">
-                        @csrf @method('DELETE')
+                    <?php if($partCount === 0): ?>
+                    <form method="POST" action="<?php echo e(route('categories.destroy',$cat)); ?>" class="d-inline"
+                        onsubmit="return confirm('Delete <?php echo e($cat->name); ?>?')">
+                        <?php echo csrf_field(); ?> <?php echo method_field('DELETE'); ?>
                         <button class="btn btn-sm btn-outline-danger" title="Delete"><i class="bi bi-trash"></i></button>
                     </form>
-                    @else
+                    <?php else: ?>
                     <button class="btn btn-sm btn-outline-secondary" disabled title="Cannot delete — has parts" style="opacity:.4;">
                         <i class="bi bi-trash"></i>
                     </button>
-                    @endif
+                    <?php endif; ?>
                 </div>
             </div>
-            @empty
+            <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>
             <div class="empty-state">
                 <div class="empty-state-icon">🏷️</div>
                 <div class="fw-semibold">No categories yet</div>
                 <div class="small">Add your first category on the right</div>
             </div>
-            @endforelse
+            <?php endif; ?>
 
-            {{-- No results message --}}
+            
             <div id="no-results" style="display:none;" class="empty-state">
                 <div class="empty-state-icon">🔍</div>
                 <div class="fw-semibold">No matches found</div>
@@ -115,11 +116,11 @@
         </div>
     </div>
 
-    {{-- ── Right: Add / Edit form ── --}}
+    
     <div>
         <div class="pro-card p-4" id="form-card">
 
-            {{-- Form title --}}
+            
             <div class="d-flex align-items-center justify-content-between mb-4">
                 <div>
                     <h5 class="syne fw-bold mb-0" id="form-title">➕ Add Category</h5>
@@ -130,13 +131,13 @@
                 </button>
             </div>
 
-            <form method="POST" id="cat-form" action="{{ route('categories.store') }}">
-                @csrf
+            <form method="POST" id="cat-form" action="<?php echo e(route('categories.store')); ?>">
+                <?php echo csrf_field(); ?>
                 <input type="hidden" name="_method" id="form-method" value="POST">
                 <input type="hidden" name="icon" id="selected-icon" value="🏷️">
                 <input type="hidden" name="color" value="#0d6efd">
 
-                {{-- Icon picker ── --}}
+                
                 <div class="mb-4">
                     <div class="form-section">Icon</div>
                     <div class="d-flex align-items-start gap-3">
@@ -151,18 +152,18 @@
                                 maxlength="4" style="width:100px;font-size:20px;text-align:center;">
                         </div>
                     </div>
-                    {{-- Emoji grid ── --}}
+                    
                     <div id="emoji-picker" class="mt-3" style="display:none;">
                         <div class="form-section mb-2">Quick pick</div>
                         <div class="emoji-picker">
-                            @foreach(['📱','💻','🖥️','⌚','📷','🎧','🔋','🔌','🛡️','📦','🔧','🔩','💡','🎮','📺','🖨️','⌨️','🖱️','💾','📡','🔌','🏷️','🛒','🎯','🍎','🌟','💎','🚀','🔑','🎁','💳','🏠','📞','📟','🔊','🎤','🎵','🎬','📸','🔭','🔬','⚙️','🛠️','🗜️','🔐','💰','🌐','📶','🤖'] as $emoji)
-                            <div class="ep-btn" onclick="selectEmoji('{{ $emoji }}')">{{ $emoji }}</div>
-                            @endforeach
+                            <?php $__currentLoopData = ['📱','💻','🖥️','⌚','📷','🎧','🔋','🔌','🛡️','📦','🔧','🔩','💡','🎮','📺','🖨️','⌨️','🖱️','💾','📡','🔌','🏷️','🛒','🎯','🍎','🌟','💎','🚀','🔑','🎁','💳','🏠','📞','📟','🔊','🎤','🎵','🎬','📸','🔭','🔬','⚙️','🛠️','🗜️','🔐','💰','🌐','📶','🤖']; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $emoji): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                            <div class="ep-btn" onclick="selectEmoji('<?php echo e($emoji); ?>')"><?php echo e($emoji); ?></div>
+                            <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                         </div>
                     </div>
                 </div>
 
-                {{-- Name ── --}}
+                
                 <div class="mb-4">
                     <div class="form-section">Category Name *</div>
                     <input type="text" name="name" id="cat-name-input" class="form-control" required
@@ -171,7 +172,7 @@
                     <div class="form-text">Use brand names (Apple, Samsung) or product types (Cases, Chargers)</div>
                 </div>
 
-                {{-- Preview ── --}}
+                
                 <div class="p-3 rounded-3 mb-4 d-flex align-items-center gap-3" style="background:var(--bs-tertiary-bg);border:1px solid var(--bs-border-color);" id="live-preview">
                     <div style="width:44px;height:44px;border-radius:12px;background:rgba(13,110,253,.08);display:flex;align-items:center;justify-content:center;font-size:22px;" id="preview-icon">🏷️</div>
                     <div>
@@ -188,7 +189,7 @@
             </form>
         </div>
 
-        {{-- Tips ── --}}
+        
         <div class="pro-card p-4 mt-3">
             <div class="form-section">💡 Tips</div>
             <ul class="list-unstyled mb-0" style="font-size:12px;color:var(--bs-secondary-color);">
@@ -202,9 +203,9 @@
 
 </div>
 
-@endsection
+<?php $__env->stopSection(); ?>
 
-@push('scripts')
+<?php $__env->startPush('scripts'); ?>
 <script>
 var currentEditId = null;
 var currentIcon   = '🏷️';
@@ -287,7 +288,7 @@ function openEdit(id, name, icon) {
 // ── Cancel edit ───────────────────────────────────────────────────
 function cancelEdit() {
     currentEditId = null;
-    document.getElementById('cat-form').action    = '{{ route("categories.store") }}';
+    document.getElementById('cat-form').action    = '<?php echo e(route("categories.store")); ?>';
     document.getElementById('form-method').value  = 'POST';
     document.getElementById('cat-name-input').value = '';
     setIcon('🏷️');
@@ -307,4 +308,5 @@ document.addEventListener('click', function(e) {
     }
 });
 </script>
-@endpush
+<?php $__env->stopPush(); ?>
+<?php echo $__env->make('layouts.app', \Illuminate\Support\Arr::except(get_defined_vars(), ['__data', '__path']))->render(); ?><?php /**PATH D:\Claud AI\new18\mobileshop\resources\views/categories/index.blade.php ENDPATH**/ ?>
